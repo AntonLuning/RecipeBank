@@ -1,0 +1,56 @@
+@startuml RecipeApp Fetch Recipe Sequence
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Sequence.puml
+
+== Fetch Recipe ==
+
+actor User as user
+participant "Web UI" as web_ui
+participant "Core API" as core_api
+participant "Auth Service" as auth_service
+database "Database" as db
+
+user -> web_ui ++ : Request recipe page
+web_ui -> core_api ++ : GET /recipe/{UUID}
+core_api -> db ++ : Query recipe data
+return Return recipe data
+return Send recipe data
+return Send rendered page
+
+== Create Recipe ==
+
+user -> web_ui ++ : Create new recipe
+
+web_ui -> core_api ++ : POST /recipe //(empty)//
+core_api -> auth_service ++ : Authenticate request
+auth_service -> db ++ : Verify user credentials
+return Return authentication result
+return Authentication response
+
+alt Authentication Successful
+    core_api -> db ++ : Create recipe 
+    return Return UUID
+    web_ui <-- core_api : Recipe created successfully
+    user <-- web_ui : Redirect to recipe page
+else Authentication Failed
+    return **401** Unauthorized
+    return Redirect to log in page
+end
+
+== Update Recipe ==
+
+user -> web_ui : Change recipe field(s)
+user -> web_ui ++ : Update/Save recipe
+
+web_ui -> core_api ++ : PUT /recipe/{UUID}
+
+group Authentication
+    core_api <-> auth_service : //As above//
+end
+
+core_api -> db ++ : Update recipe field(s)
+return Return UUID
+return Recipe updated successfully
+return Reload recipe page
+
+@enduml
