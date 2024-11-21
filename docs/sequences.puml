@@ -1,4 +1,4 @@
-@startuml RecipeApp Fetch Recipe Sequence
+@startuml sequences
 
 !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Sequence.puml
 
