@@ -2,10 +2,10 @@
 
 !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
 
-Person(user, "User", "A user of the RecipeApp")
+Person(user, "User", "A user of RecipeNest")
 Person(admin, "Admin", "System administrator")
 
-System_Boundary(recipeapp, "RecipeApp") {
+System_Boundary(app, "RecipeNest") {
     Container(web_ui, "Web UI", "Go Templ+HTMX", "Web application")
     Container(core_api, "Core API", "Go", "Implements all application logic and data operations")
     Container(auth_service, "Authentication Service", "Go", "Manages user authentication")
@@ -24,7 +24,7 @@ BiRel_D(core_api, auth_service, "Authenticates requests")
 BiRel_D(core_api, db, "Reads from and writes to")
 BiRel_D(auth_service, db, "Verifies credentials")
 
-Rel(recipeapp, prometheus, "Exposes metrics")
+Rel(app, prometheus, "Exposes metrics")
 
 Rel(prometheus, grafana, "Provides metrics")
 
