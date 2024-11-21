@@ -1,0 +1,29 @@
+name: Generate PlantUML Diagram
+
+on:
+  push:
+    paths:
+      - '**.puml'
+
+jobs:
+  generate-plantuml:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Generate PlantUML Diagrams
+        uses: holowinski/plantuml-github-action@main
+        with:
+          args: -v -tpng **.puml
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: plantuml-diagrams
+          path: ./*.png
+
+      - name: Get artifact URL
+        id: artifact_url
+        run: |
+          echo "::set-output name=url::${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
