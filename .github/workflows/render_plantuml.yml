@@ -17,13 +17,14 @@ jobs:
         with:
           args: -v -tpng **.puml
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: plantuml-diagrams
-          path: ./*.png
-
-      - name: Get artifact URL
-        id: artifact_url
+      - name: Move PNG files
         run: |
-          echo "::set-output name=url::${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          mkdir -p images
+          mv *.png images/
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./images
+          keep_files: true
