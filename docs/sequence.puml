@@ -2,7 +2,7 @@
 
 !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Sequence.puml
 
-== Fetch Recipe ==
+== Fetch Recipe1 ==
 
 actor User as user
 participant "Web UI" as web_ui
