@@ -2,10 +2,10 @@
 
 !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
 
-Person(user, "User", "A user of RecipeNest")
+Person(user, "User", "A user of RecipeBank")
 Person(admin, "Admin", "System administrator")
 
-System_Boundary(app, "RecipeNest") {
+System_Boundary(app, "RecipeBank") {
     Container(web_ui, "Web UI", "Go Templ+HTMX", "Web application")
     Container(core_api, "Core API", "Go", "Implements all application logic and data operations")
     Container(auth_service, "Authentication Service", "Go", "Manages user authentication")

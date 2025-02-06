@@ -1,4 +1,4 @@
-# RecipeNest
+# RecipeBank
 
 Introduction ...
 
@@ -7,3 +7,9 @@ Introduction ...
 
 ## Sequences
 ![Sequences](docs/sequences.png)
+
+
+## Ideas
+- Plan your upcoming dishes
+  - Generate grocery lists
+- Use AI to create receipes from a receipe web page (input URL)
