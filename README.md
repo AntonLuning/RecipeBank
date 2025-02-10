@@ -11,5 +11,5 @@ Introduction ...
 
 ## Ideas
 - Plan your upcoming dishes
-  - Generate grocery lists
+  - Generate grocery lists (AI to group them)
 - Use AI to create receipes from a receipe web page (input URL)

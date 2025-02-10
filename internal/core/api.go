@@ -3,27 +3,29 @@ package core
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log/slog"
 	"net/http"
+
+	"github.com/AntonLuning/RecipeBank/internal/core/service"
 )
 
 type apiFunc func(context.Context, http.ResponseWriter, *http.Request) error
 
 type ApiServer struct {
-	addr string
+	addr    string
+	service service.Service
 }
 
-func NewApiServer(addr string) *ApiServer {
+func NewApiServer(addr string, service service.Service) *ApiServer {
 	return &ApiServer{
-		addr: addr,
+		addr:    addr,
+		service: service,
 	}
 }
 
 func (s *ApiServer) Run() error {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/api/v1", makeHTTPHandlerFunc(s.handleGetInfo))
 	mux.Handle("/api/v1/", http.StripPrefix("/api/v1", s.v1Mux()))
 
 	slog.Info("API server starting", "address", s.addr)
@@ -42,18 +44,19 @@ func (s *ApiServer) v1Mux() http.Handler {
 	return v1Mux
 }
 
-func (s *ApiServer) handleGetInfo(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	return writeJSON(w, http.StatusOK, "Hello Info")
-}
-
 func (s *ApiServer) handleGetRecipe(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+
 	return writeJSON(w, http.StatusOK, "Hello Recipe")
 }
 
 func (s *ApiServer) handleGetRecipeByID(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	id := r.PathValue("id")
+	recipe, err := s.service.GetRecipe(ctx, id)
+	if err != nil {
+		return err
+	}
 
-	return writeJSON(w, http.StatusOK, fmt.Sprintf("Hello Recipe %s", id))
+	return writeJSON(w, http.StatusOK, recipe.Title)
 }
 
 func (s *ApiServer) handlePostRecipe(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
