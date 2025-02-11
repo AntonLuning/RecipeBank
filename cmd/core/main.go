@@ -5,10 +5,13 @@ import (
 
 	"github.com/AntonLuning/RecipeBank/internal/core"
 	"github.com/AntonLuning/RecipeBank/internal/core/service"
+	"github.com/AntonLuning/RecipeBank/internal/core/storage"
 )
 
 func main() {
-	recipeService := service.NewRecipeService()
+	storage := storage.NewStorage()
+
+	recipeService := service.NewRecipeService(&storage)
 	// if cfg.InludeMetrics {
 	// 	recipeService = service.NewMetricsService(recipeService, fmt.Sprintf(":%d", cfg.PortMetrics)) // Service wrapped in metrics
 	// }

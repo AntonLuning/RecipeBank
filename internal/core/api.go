@@ -3,10 +3,12 @@ package core
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 
 	"github.com/AntonLuning/RecipeBank/internal/core/service"
+	"github.com/AntonLuning/RecipeBank/pkg/core/models"
 )
 
 type apiFunc func(context.Context, http.ResponseWriter, *http.Request) error
@@ -36,21 +38,24 @@ func (s *ApiServer) Run() error {
 func (s *ApiServer) v1Mux() http.Handler {
 	v1Mux := http.NewServeMux()
 
-	v1Mux.HandleFunc("GET /recipe", makeHTTPHandlerFunc(s.handleGetRecipe))
+	// v1Mux.HandleFunc("GET /recipe", makeHTTPHandlerFunc(s.handleGetRecipe))
 	v1Mux.HandleFunc("GET /recipe/{id}", makeHTTPHandlerFunc(s.handleGetRecipeByID))
 	v1Mux.HandleFunc("POST /recipe", makeHTTPHandlerFunc(s.handlePostRecipe))
-	v1Mux.HandleFunc("PUT /recipe", makeHTTPHandlerFunc(s.handlePutRecipe))
+	// v1Mux.HandleFunc("PUT /recipe", makeHTTPHandlerFunc(s.handlePutRecipe))
 
 	return v1Mux
 }
 
-func (s *ApiServer) handleGetRecipe(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-
-	return writeJSON(w, http.StatusOK, "Hello Recipe")
-}
+// func (s *ApiServer) handleGetRecipe(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+// 	return writeJSON(w, http.StatusOK, "Hello Recipe")
+// }
 
 func (s *ApiServer) handleGetRecipeByID(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	id := r.PathValue("id")
+	if id == "" {
+		return fmt.Errorf("id argument is empty or missing")
+	}
+
 	recipe, err := s.service.GetRecipe(ctx, id)
 	if err != nil {
 		return err
@@ -60,12 +65,28 @@ func (s *ApiServer) handleGetRecipeByID(ctx context.Context, w http.ResponseWrit
 }
 
 func (s *ApiServer) handlePostRecipe(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	return writeJSON(w, http.StatusOK, "Hello POST Recipe")
+	// Limit the size of the request body to prevent potential abuse
+	r.Body = http.MaxBytesReader(w, r.Body, 1<<20) // 1 MB limit[5]
+
+	var data models.PostRecipeData
+	err := json.NewDecoder(r.Body).Decode(&data)
+	if err != nil {
+		return err
+	}
+
+	id, err := s.service.CreateRecipe(ctx, data)
+	if err != nil {
+		return nil
+	}
+
+	return writeJSON(w, http.StatusOK, models.PostRecipeResponse{
+		Id: id,
+	})
 }
 
-func (s *ApiServer) handlePutRecipe(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	return writeJSON(w, http.StatusOK, "Hello PUT Recipe")
-}
+// func (s *ApiServer) handlePutRecipe(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+// 	return writeJSON(w, http.StatusCreated, "Hello PUT Recipe")
+// }
 
 func makeHTTPHandlerFunc(apiFn apiFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
