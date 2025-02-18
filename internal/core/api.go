@@ -16,23 +16,26 @@ type apiFunc func(context.Context, http.ResponseWriter, *http.Request) error
 type ApiServer struct {
 	addr    string
 	service service.Service
+	mux     *http.ServeMux
 }
 
 func NewApiServer(addr string, service service.Service) *ApiServer {
-	return &ApiServer{
+	server := ApiServer{
 		addr:    addr,
 		service: service,
 	}
+
+	mux := http.NewServeMux()
+	mux.Handle("/api/v1/", http.StripPrefix("/api/v1", server.v1Mux()))
+	server.mux = mux
+
+	return &server
 }
 
 func (s *ApiServer) Run() error {
-	mux := http.NewServeMux()
-
-	mux.Handle("/api/v1/", http.StripPrefix("/api/v1", s.v1Mux()))
-
 	slog.Info("API server starting", "address", s.addr)
 
-	return http.ListenAndServe(s.addr, mux)
+	return http.ListenAndServe(s.addr, s.mux)
 }
 
 func (s *ApiServer) v1Mux() http.Handler {
@@ -55,7 +58,7 @@ func (s *ApiServer) handleGetRecipe(ctx context.Context, w http.ResponseWriter, 
 		return err
 	}
 
-	return writeJSON(w, http.StatusOK, recipes)
+	return writeJSON(w, http.StatusOK, map[string]interface{}{"recipes": recipes})
 }
 
 func (s *ApiServer) handleGetRecipeByID(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
@@ -84,17 +87,13 @@ func (s *ApiServer) handlePostRecipe(ctx context.Context, w http.ResponseWriter,
 
 	id, err := s.service.CreateRecipe(ctx, data)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	return writeJSON(w, http.StatusOK, models.PostRecipeResponse{
-		Id: id,
+		ID: id,
 	})
 }
-
-// func (s *ApiServer) handlePutRecipe(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-// 	return writeJSON(w, http.StatusCreated, "Hello PUT Recipe")
-// }
 
 func makeHTTPHandlerFunc(apiFn apiFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

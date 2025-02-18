@@ -1,9 +1,9 @@
 package models
 
 type PostRecipeData struct {
-	Title string
+	Title string `json:"title"`
 }
 
 type PostRecipeResponse struct {
-	Id string
+	ID string `json:"id"`
 }

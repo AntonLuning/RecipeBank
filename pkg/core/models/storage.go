@@ -1,6 +1,6 @@
 package models
 
 type Recipe struct {
-	ID    string
-	Title string
+	ID    string `json:"id"`
+	Title string `json:"title"`
 }
