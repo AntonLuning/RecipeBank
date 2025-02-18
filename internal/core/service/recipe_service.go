@@ -23,6 +23,10 @@ func (s *RecipeService) GetRecipe(ctx context.Context, id string) (*models.Recip
 	return s.storage.FetchRecipe(id)
 }
 
+func (s *RecipeService) GetRecipes(ctx context.Context, filter string) (*[]models.Recipe, error) {
+	return s.storage.FetchRecipes(filter)
+}
+
 func (s *RecipeService) CreateRecipe(ctx context.Context, recipeData models.PostRecipeData) (string, error) {
 	id := strconv.Itoa(rand.Int())
 

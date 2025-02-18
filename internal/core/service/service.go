@@ -8,7 +8,7 @@ import (
 
 type Service interface {
 	GetRecipe(ctx context.Context, id string) (recipe *models.Recipe, err error)
-	// GetRecipes(context.Context, string) (*[]core.Recipe, error)
+	GetRecipes(ctx context.Context, filter string) (recipes *[]models.Recipe, err error)
 	CreateRecipe(ctx context.Context, recipe models.PostRecipeData) (id string, err error)
 	// UpdateRecipe(context.Context, string) error
 }

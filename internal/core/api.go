@@ -38,17 +38,25 @@ func (s *ApiServer) Run() error {
 func (s *ApiServer) v1Mux() http.Handler {
 	v1Mux := http.NewServeMux()
 
-	// v1Mux.HandleFunc("GET /recipe", makeHTTPHandlerFunc(s.handleGetRecipe))
+	v1Mux.HandleFunc("GET /recipe", makeHTTPHandlerFunc(s.handleGetRecipe))
 	v1Mux.HandleFunc("GET /recipe/{id}", makeHTTPHandlerFunc(s.handleGetRecipeByID))
 	v1Mux.HandleFunc("POST /recipe", makeHTTPHandlerFunc(s.handlePostRecipe))
-	// v1Mux.HandleFunc("PUT /recipe", makeHTTPHandlerFunc(s.handlePutRecipe))
+	// v1Mux.HandleFunc("PUT /recipe/{id}", makeHTTPHandlerFunc(s.handlePutRecipe))
+	// v1Mux.HandleFunc("DELETE /recipe/{id}", makeHTTPHandlerFunc(s.handlePutRecipe))
 
 	return v1Mux
 }
 
-// func (s *ApiServer) handleGetRecipe(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-// 	return writeJSON(w, http.StatusOK, "Hello Recipe")
-// }
+func (s *ApiServer) handleGetRecipe(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	filter := "" // TODO: include an option to send a filter in the request
+
+	recipes, err := s.service.GetRecipes(ctx, filter)
+	if err != nil {
+		return err
+	}
+
+	return writeJSON(w, http.StatusOK, recipes)
+}
 
 func (s *ApiServer) handleGetRecipeByID(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	id := r.PathValue("id")
@@ -61,7 +69,7 @@ func (s *ApiServer) handleGetRecipeByID(ctx context.Context, w http.ResponseWrit
 		return err
 	}
 
-	return writeJSON(w, http.StatusOK, recipe.Title)
+	return writeJSON(w, http.StatusOK, recipe)
 }
 
 func (s *ApiServer) handlePostRecipe(ctx context.Context, w http.ResponseWriter, r *http.Request) error {

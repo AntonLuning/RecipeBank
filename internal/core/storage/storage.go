@@ -29,3 +29,9 @@ func (s *Storage) FetchRecipe(id string) (*models.Recipe, error) {
 
 	return nil, fmt.Errorf("id %s could not be found", id)
 }
+
+func (s *Storage) FetchRecipes(filter string) (*[]models.Recipe, error) {
+	// TODO: make use of filter
+
+	return &s.db, nil
+}
