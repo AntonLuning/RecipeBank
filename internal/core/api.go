@@ -51,7 +51,7 @@ func (s *ApiServer) v1Mux() http.Handler {
 }
 
 func (s *ApiServer) handleGetRecipe(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	filter := "" // TODO: include an option to send a filter in the request
+	filter := models.RecipeFilter{}
 
 	recipes, err := s.service.GetRecipes(ctx, filter)
 	if err != nil {
@@ -77,7 +77,7 @@ func (s *ApiServer) handleGetRecipeByID(ctx context.Context, w http.ResponseWrit
 
 func (s *ApiServer) handlePostRecipe(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	// Limit the size of the request body to prevent potential abuse
-	r.Body = http.MaxBytesReader(w, r.Body, 1<<20) // 1 MB limit[5]
+	r.Body = http.MaxBytesReader(w, r.Body, 1<<20) // 1 MB limit
 
 	var data models.PostRecipeData
 	err := json.NewDecoder(r.Body).Decode(&data)

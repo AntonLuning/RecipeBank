@@ -3,8 +3,10 @@ package core
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -12,6 +14,14 @@ import (
 
 	"github.com/AntonLuning/RecipeBank/internal/core/service"
 	"github.com/AntonLuning/RecipeBank/internal/core/storage"
+)
+
+var (
+	dbHost = flag.String("db-host", "localhost", "Database host")
+	dbPort = flag.Int("db-port", 0, "Database port")
+	dbUser = flag.String("db-user", "", "Database user")
+	dbPass = flag.String("db-password", "", "Database password")
+	dbName = flag.String("db-name", "", "Database name")
 )
 
 var server *httptest.Server
@@ -26,9 +36,22 @@ func TestMain(m *testing.M) {
 }
 
 func initTestServer() {
-	storage := storage.NewStorage() // TODO: Needs to be handled if require database
+	flag.Parse()
+	dbConfig := storage.StorageConfig{
+		Host:     *dbHost,
+		Port:     *dbPort,
+		Username: *dbUser,
+		Password: *dbPass,
+		Database: *dbName,
+	}
 
-	recipeService := service.NewRecipeService(&storage)
+	storage, err := storage.NewStorage(dbConfig)
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(1)
+	}
+
+	recipeService := service.NewRecipeService(storage)
 	api := NewApiServer("", recipeService)
 
 	server = httptest.NewServer(api.mux)

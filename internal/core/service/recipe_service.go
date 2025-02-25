@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"math/rand"
 	"strconv"
 
@@ -23,8 +24,17 @@ func (s *RecipeService) GetRecipe(ctx context.Context, id string) (*models.Recip
 	return s.storage.FetchRecipe(id)
 }
 
-func (s *RecipeService) GetRecipes(ctx context.Context, filter string) (*[]models.Recipe, error) {
-	return s.storage.FetchRecipes(filter)
+func (s *RecipeService) GetRecipes(ctx context.Context, filter models.RecipeFilter) ([]*models.Recipe, error) {
+	recipes, err := s.storage.FetchRecipes(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(recipes) < 1 {
+		return nil, fmt.Errorf("no recipes exist")
+	}
+
+	return recipes, nil
 }
 
 func (s *RecipeService) CreateRecipe(ctx context.Context, recipeData models.PostRecipeData) (string, error) {

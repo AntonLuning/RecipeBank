@@ -9,12 +9,20 @@ import (
 )
 
 func main() {
-	storage := storage.NewStorage()
+	dbConfig := storage.StorageConfig{
+		Host:     "localhost",
+		Port:     27017,
+		Username: "root",
+		Password: "example",
+		Database: "bank",
+	} // TODO: use github.com/caarlos0/env/v11 for configuration parameters
+	storage, err := storage.NewStorage(dbConfig)
+	if err != nil {
+		slog.Error("Unable to create new storage", "error", err.Error())
+		return
+	}
 
-	recipeService := service.NewRecipeService(&storage)
-	// if cfg.InludeMetrics {
-	// 	recipeService = service.NewMetricsService(recipeService, fmt.Sprintf(":%d", cfg.PortMetrics)) // Service wrapped in metrics
-	// }
+	recipeService := service.NewRecipeService(storage)
 
 	server := core.NewApiServer(":7777", recipeService)
 
