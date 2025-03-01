@@ -7,6 +7,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 	"time"
 
@@ -130,13 +131,13 @@ func TestHandleGetRecipeByID(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		// Set up the mock service
-		mockService.On("GetRecipe", mock.Anything, "invalid-id").Return(nil, errors.New("invalid ID")).Once()
+		mockService.On("GetRecipe", mock.Anything, "invalid-id").Return(nil, storage.ErrInvalidID).Once()
 
 		// Call the handler
 		apiServer.mux.ServeHTTP(w, req)
 
 		// Check the response
-		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
 
 		mockService.AssertExpectations(t)
 	})
@@ -695,4 +696,143 @@ func TestHandleDeleteRecipe(t *testing.T) {
 
 		mockService.AssertExpectations(t)
 	})
+}
+
+func TestResponseWriters(t *testing.T) {
+	t.Run("writeSuccessResponse", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		data := map[string]string{"key": "value"}
+
+		err := writeSuccessResponse(w, http.StatusOK, data)
+
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
+
+		var response map[string]interface{}
+		err = json.Unmarshal(w.Body.Bytes(), &response)
+		assert.NoError(t, err)
+
+		assert.Equal(t, true, response["success"])
+		responseData, ok := response["data"].(map[string]interface{})
+		assert.True(t, ok)
+		assert.Equal(t, "value", responseData["key"])
+	})
+
+	t.Run("writeErrorResponse", func(t *testing.T) {
+		w := httptest.NewRecorder()
+
+		writeErrorResponse(w, http.StatusBadRequest, "invalid_input", "The input is invalid")
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
+
+		var response map[string]interface{}
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		assert.NoError(t, err)
+
+		assert.Equal(t, false, response["success"])
+		assert.Equal(t, "invalid_input", response["error"].(map[string]interface{})["code"])
+		assert.Equal(t, "The input is invalid", response["error"].(map[string]interface{})["message"])
+	})
+}
+
+func TestErrorExtractorFunctions(t *testing.T) {
+	t.Run("extractParamNameFromError", func(t *testing.T) {
+		tests := []struct {
+			errMsg   string
+			expected string
+		}{
+			{"id parameter is required", "id"},
+			{"invalid page parameter: strconv.Atoi: parsing \"abc\": invalid syntax", "page"},
+			{"some other error", ""},
+		}
+
+		for _, tc := range tests {
+			result := extractParamNameFromError(tc.errMsg)
+			assert.Equal(t, tc.expected, result)
+		}
+	})
+
+	t.Run("extractValidationDetails", func(t *testing.T) {
+		tests := []struct {
+			errMsg   string
+			expected string
+		}{
+			{"recipe title is required", "One or more required fields are missing"},
+			{"ingredient 1 must have a minimum quantity of 0.1", "One or more fields do not meet minimum requirements"},
+			{"some other validation error", "The provided data failed validation requirements"},
+		}
+
+		for _, tc := range tests {
+			result := extractValidationDetails(tc.errMsg)
+			assert.Equal(t, tc.expected, result)
+		}
+	})
+
+	t.Run("extractResourceTypeFromError", func(t *testing.T) {
+		tests := []struct {
+			errMsg   string
+			expected string
+		}{
+			{"recipe not found", "recipe"},
+			{"ingredient not found", "ingredient"},
+			{"tag not found", "tag"},
+			{"some other resource not found", "resource"},
+		}
+
+		for _, tc := range tests {
+			result := extractResourceTypeFromError(tc.errMsg)
+			assert.Equal(t, tc.expected, result)
+		}
+	})
+}
+
+func TestParseIntParam(t *testing.T) {
+	tests := []struct {
+		name         string
+		queryParams  url.Values
+		key          string
+		defaultValue int
+		expected     int
+		expectError  bool
+	}{
+		{
+			name:         "valid integer",
+			queryParams:  url.Values{"limit": []string{"20"}},
+			key:          "limit",
+			defaultValue: 10,
+			expected:     20,
+			expectError:  false,
+		},
+		{
+			name:         "missing parameter",
+			queryParams:  url.Values{},
+			key:          "limit",
+			defaultValue: 10,
+			expected:     10,
+			expectError:  false,
+		},
+		{
+			name:         "invalid integer",
+			queryParams:  url.Values{"limit": []string{"abc"}},
+			key:          "limit",
+			defaultValue: 10,
+			expected:     0,
+			expectError:  true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := parseIntParam(tc.queryParams, tc.key, tc.defaultValue)
+			if tc.expectError {
+				assert.Error(t, err)
+				assert.ErrorIs(t, errors.Unwrap(err), ErrInvalidQueryParams)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expected, result)
+			}
+		})
+	}
 }
