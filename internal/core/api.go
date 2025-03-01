@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -17,14 +18,14 @@ import (
 
 type apiFunc func(context.Context, http.ResponseWriter, *http.Request) error
 
-type ApiServer struct {
+type APIServer struct {
 	addr    string
 	service service.Service
 	mux     *http.ServeMux
 }
 
-func NewApiServer(addr string, service service.Service) *ApiServer {
-	server := ApiServer{
+func NewAPIServer(addr string, service service.Service) *APIServer {
+	server := APIServer{
 		addr:    addr,
 		service: service,
 	}
@@ -36,13 +37,13 @@ func NewApiServer(addr string, service service.Service) *ApiServer {
 	return &server
 }
 
-func (s *ApiServer) Run() error {
+func (s *APIServer) Run() error {
 	slog.Info("API server starting", "address", s.addr)
 
 	return http.ListenAndServe(s.addr, s.mux)
 }
 
-func (s *ApiServer) v1Mux() http.Handler {
+func (s *APIServer) v1Mux() http.Handler {
 	v1Mux := http.NewServeMux()
 
 	v1Mux.HandleFunc("GET /recipe", makeHTTPHandlerFunc(s.handleGetRecipes))
@@ -54,21 +55,10 @@ func (s *ApiServer) v1Mux() http.Handler {
 	return v1Mux
 }
 
-func (s *ApiServer) handleGetRecipes(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (s *APIServer) handleGetRecipes(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var query models.GetRecipesQuery
 	if err := s.parseQueryParams(r, &query); err != nil {
 		return err
-	}
-
-	// Set defaults
-	if query.Page < 1 {
-		query.Page = 1
-	}
-	if query.Limit < 1 {
-		query.Limit = 10
-	}
-	if query.Limit > 100 {
-		query.Limit = 100
 	}
 
 	recipes, err := s.service.GetRecipes(ctx, query.Filter, query.Page, query.Limit)
@@ -79,7 +69,7 @@ func (s *ApiServer) handleGetRecipes(ctx context.Context, w http.ResponseWriter,
 	return writeSuccessResponse(w, http.StatusOK, recipes)
 }
 
-func (s *ApiServer) handleGetRecipeByID(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (s *APIServer) handleGetRecipeByID(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	id := r.PathValue("id")
 	if id == "" {
 		return fmt.Errorf("%w: id parameter is required", ErrMissingPathParam)
@@ -93,7 +83,7 @@ func (s *ApiServer) handleGetRecipeByID(ctx context.Context, w http.ResponseWrit
 	return writeSuccessResponse(w, http.StatusOK, recipe)
 }
 
-func (s *ApiServer) handlePostRecipe(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (s *APIServer) handlePostRecipe(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var req models.CreateRecipeRequest
 	if err := s.parseJSONBody(w, r, &req); err != nil {
 		return err
@@ -109,7 +99,7 @@ func (s *ApiServer) handlePostRecipe(ctx context.Context, w http.ResponseWriter,
 	return writeSuccessResponse(w, http.StatusCreated, createdRecipe)
 }
 
-func (s *ApiServer) handlePutRecipe(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (s *APIServer) handlePutRecipe(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	id := r.PathValue("id")
 	if id == "" {
 		return fmt.Errorf("%w: id parameter is required", ErrMissingPathParam)
@@ -130,7 +120,7 @@ func (s *ApiServer) handlePutRecipe(ctx context.Context, w http.ResponseWriter, 
 	return writeSuccessResponse(w, http.StatusOK, updatedRecipe)
 }
 
-func (s *ApiServer) handleDeleteRecipe(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (s *APIServer) handleDeleteRecipe(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	id := r.PathValue("id")
 	if id == "" {
 		return fmt.Errorf("%w: id parameter is required", ErrMissingPathParam)
@@ -153,33 +143,47 @@ func makeHTTPHandlerFunc(apiFn apiFunc) http.HandlerFunc {
 			slog.Error("Request failed", "error", err)
 
 			switch {
-			case errors.Is(err, ErrBadRequest):
-				writeErrorResponse(w, http.StatusBadRequest, "bad_request", err.Error())
+			case errors.Is(err, ErrJSONDecode):
+				writeErrorResponse(w, http.StatusBadRequest, "invalid_json", "The request body contains invalid JSON")
 			case errors.Is(err, ErrInvalidQueryParams):
-				writeErrorResponse(w, http.StatusBadRequest, "invalid_query_params", err.Error())
+				msg := "One or more query parameters are invalid"
+				if paramErr := extractParamNameFromError(err.Error()); paramErr != "" {
+					msg = fmt.Sprintf("Invalid query parameter: %s", paramErr)
+				}
+				writeErrorResponse(w, http.StatusBadRequest, "invalid_query_params", msg)
 			case errors.Is(err, ErrMissingPathParam):
-				writeErrorResponse(w, http.StatusBadRequest, "missing_path_param", err.Error())
+				msg := "A required path parameter is missing"
+				if paramErr := extractParamNameFromError(err.Error()); paramErr != "" {
+					msg = fmt.Sprintf("Missing required path parameter: %s", paramErr)
+				}
+				writeErrorResponse(w, http.StatusBadRequest, "missing_path_param", msg)
 			case errors.Is(err, ErrRequestBodyTooLarge):
-				writeErrorResponse(w, http.StatusRequestEntityTooLarge, "request_too_large", err.Error())
+				writeErrorResponse(w, http.StatusRequestEntityTooLarge, "request_too_large", "The request body exceeds the maximum allowed size")
 			case errors.Is(err, service.ErrValidation):
-				writeErrorResponse(w, http.StatusBadRequest, "validation_error", err.Error())
+				writeErrorResponse(w, http.StatusBadRequest, "validation_error", extractValidationDetails(err.Error()))
 			case errors.Is(err, service.ErrInvalidInput):
-				writeErrorResponse(w, http.StatusBadRequest, "invalid_input", err.Error())
+				writeErrorResponse(w, http.StatusBadRequest, "invalid_input", extractInputErrorDetails(err.Error()))
 			case errors.Is(err, storage.ErrInvalidID):
-				writeErrorResponse(w, http.StatusBadRequest, "invalid_id", err.Error())
+				writeErrorResponse(w, http.StatusBadRequest, "invalid_id", "The provided ID is invalid or malformed")
 			case errors.Is(err, storage.ErrNotFound):
-				writeErrorResponse(w, http.StatusNotFound, "not_found", err.Error())
+				writeErrorResponse(w, http.StatusNotFound, "not_found", fmt.Sprintf(
+					"The requested %s was not found", extractResourceTypeFromError(err.Error()),
+				))
 			default:
-				writeErrorResponse(w, http.StatusInternalServerError, "internal_error", "internal server error")
+				writeErrorResponse(w, http.StatusInternalServerError, "internal_error", "An internal server error occurred")
 			}
 		}
 	}
 }
 
 // Helper functions
-func (s *ApiServer) parseJSONBody(w http.ResponseWriter, r *http.Request, v interface{}) error {
+func (s *APIServer) parseJSONBody(w http.ResponseWriter, r *http.Request, v interface{}) error {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20) // 1 MB limit
-	return json.NewDecoder(r.Body).Decode(v)
+	err := json.NewDecoder(r.Body).Decode(v)
+	if err != nil {
+		return fmt.Errorf("%w: %v", ErrJSONDecode, err)
+	}
+	return nil
 }
 
 func createRecipeFromRequest(req models.RecipeRequest) *models.Recipe {
@@ -218,38 +222,29 @@ func writeErrorResponse(w http.ResponseWriter, status int, code, message string)
 	})
 }
 
-func (s *ApiServer) parseQueryParams(r *http.Request, query *models.GetRecipesQuery) error {
+func (s *APIServer) parseQueryParams(r *http.Request, query *models.GetRecipesQuery) error {
 	q := r.URL.Query()
 
-	if pageStr := q.Get("page"); pageStr != "" {
-		page, err := strconv.Atoi(pageStr)
-		if err != nil {
-			return fmt.Errorf("%w: invalid page parameter: %v", ErrInvalidQueryParams, err)
-		}
-		query.Page = page
+	// Parse pagination parameters with helper function
+	var err error
+	query.Page, err = parseIntParam(q, "page", 1)
+	if err != nil {
+		return err
 	}
 
-	if limitStr := q.Get("limit"); limitStr != "" {
-		limit, err := strconv.Atoi(limitStr)
-		if err != nil {
-			return fmt.Errorf("%w: invalid limit parameter: %v", ErrInvalidQueryParams, err)
-		}
-		query.Limit = limit
+	query.Limit, err = parseIntParam(q, "limit", 10)
+	if err != nil {
+		return err
 	}
 
 	// Parse filter parameters
 	var filter models.RecipeFilter
 
-	if title := q.Get("title"); title != "" {
-		filter.Title = title
-	}
+	filter.Title = q.Get("title")
 
-	if cookTimeStr := q.Get("cook_time"); cookTimeStr != "" {
-		cookTime, err := strconv.Atoi(cookTimeStr)
-		if err != nil {
-			return fmt.Errorf("%w: invalid cook_time parameter: %v", ErrInvalidQueryParams, err)
-		}
-		filter.CookTime = cookTime
+	filter.CookTime, err = parseIntParam(q, "cook_time", 0)
+	if err != nil {
+		return err
 	}
 
 	if ingredients := q.Get("ingredients"); ingredients != "" {
@@ -263,4 +258,69 @@ func (s *ApiServer) parseQueryParams(r *http.Request, query *models.GetRecipesQu
 	query.Filter = filter
 
 	return nil
+}
+
+func parseIntParam(q url.Values, key string, defaultValue int) (int, error) {
+	str := q.Get(key)
+	if str == "" {
+		return defaultValue, nil
+	}
+
+	val, err := strconv.Atoi(str)
+	if err != nil {
+		return 0, fmt.Errorf("%w: invalid %s parameter: %v", ErrInvalidQueryParams, key, err)
+	}
+
+	return val, nil
+}
+
+// Helper functions for extracting user-safe error details
+
+func extractParamNameFromError(errMsg string) string {
+	if strings.Contains(errMsg, "parameter") {
+		parts := strings.Split(errMsg, "parameter")
+		if len(parts) > 1 {
+			paramPart := strings.TrimSpace(parts[0])
+			paramParts := strings.Split(paramPart, " ")
+			if len(paramParts) > 0 {
+				return paramParts[len(paramParts)-1]
+			}
+		}
+	}
+	return ""
+}
+
+// extractValidationDetails creates a user-friendly validation error message
+func extractValidationDetails(errMsg string) string {
+	if strings.Contains(errMsg, "required") {
+		return "One or more required fields are missing"
+	}
+	if strings.Contains(errMsg, "min") {
+		return "One or more fields do not meet minimum requirements"
+	}
+
+	return "The provided data failed validation requirements"
+}
+
+// extractInputErrorDetails creates a user-friendly input error message
+func extractInputErrorDetails(_ string) string {
+	// This can be enhanced to parse specific input error types
+
+	return "The provided input data is invalid or incomplete"
+}
+
+// extractResourceTypeFromError attempts to extract the resource type from not found errors
+func extractResourceTypeFromError(errMsg string) string {
+	// Default resource type
+	resourceType := "resource"
+
+	lowerMsg := strings.ToLower(errMsg)
+	for _, knownType := range []string{"recipe", "ingredient", "tag"} {
+		if strings.Contains(lowerMsg, knownType) {
+			resourceType = knownType
+			break
+		}
+	}
+
+	return resourceType
 }

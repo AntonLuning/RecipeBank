@@ -21,7 +21,7 @@ func main() {
 		Database: "recipes_db",
 	} // TODO: use github.com/caarlos0/env/v11 for configuration parameters
 
-	// Initialize storage
+	// Create storage
 	storage, err := storage.NewMongoStorage(ctx, dbConfig)
 	if err != nil {
 		slog.Error("Unable to create new storage", "error", err.Error())
@@ -46,7 +46,7 @@ func main() {
 
 	// Initialize API server
 	serverAddr := ":7777"
-	server := core.NewApiServer(serverAddr, recipeService)
+	server := core.NewAPIServer(serverAddr, recipeService)
 
 	// Start the server
 	if err := server.Run(); err != nil {

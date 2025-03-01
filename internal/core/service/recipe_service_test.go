@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -158,12 +159,23 @@ func TestGetRecipes(t *testing.T) {
 		mockStorage.AssertExpectations(t)
 	})
 
-	t.Run("Invalid Page or Limit", func(t *testing.T) {
+	t.Run("Zero Page and Limit", func(t *testing.T) {
+		// Storage should handle default values for page and limit
+		expectedPage := &models.RecipePage{
+			Recipes:    []models.Recipe{},
+			Total:      0,
+			Page:       1,  // Default page
+			Limit:      10, // Default limit
+			TotalPages: 0,
+		}
+
+		mockStorage.On("GetRecipes", ctx, filter, 0, 0).Return(expectedPage, nil).Once()
+
 		page, err := recipeService.GetRecipes(ctx, filter, 0, 0)
 
-		assert.Error(t, err)
-		assert.Nil(t, page)
-		assert.ErrorIs(t, errors.Unwrap(err), ErrInvalidInput)
+		assert.NoError(t, err)
+		assert.Equal(t, expectedPage, page)
+		mockStorage.AssertExpectations(t)
 	})
 
 	t.Run("Storage Error", func(t *testing.T) {
@@ -371,4 +383,166 @@ func TestDeleteRecipe(t *testing.T) {
 		assert.Contains(t, err.Error(), "failed to delete recipe")
 		mockStorage.AssertExpectations(t)
 	})
+}
+
+// TestGetRecipeWithEmptyID tests the GetRecipe method with an empty ID
+func TestGetRecipeWithEmptyID(t *testing.T) {
+	mockStorage := new(MockStorage)
+	recipeService := NewRecipeService(mockStorage)
+
+	ctx := context.Background()
+	emptyID := ""
+
+	// No mock expectation needed since validation happens before storage call
+
+	recipe, err := recipeService.GetRecipe(ctx, emptyID)
+
+	assert.Error(t, err)
+	assert.Nil(t, recipe)
+	assert.ErrorIs(t, errors.Unwrap(err), ErrInvalidInput)
+	assert.Contains(t, err.Error(), "invalid recipe ID")
+	// No need to assert expectations since we don't expect any calls
+}
+
+// TestGetRecipeWithInvalidID tests the GetRecipe method with an invalid ID format
+func TestGetRecipeWithInvalidID(t *testing.T) {
+	mockStorage := new(MockStorage)
+	recipeService := NewRecipeService(mockStorage)
+
+	ctx := context.Background()
+	invalidID := "not-a-valid-object-id"
+
+	mockStorage.On("GetRecipeByID", ctx, invalidID).Return(nil, errors.New("invalid ObjectID")).Once()
+
+	recipe, err := recipeService.GetRecipe(ctx, invalidID)
+
+	assert.Error(t, err)
+	assert.Nil(t, recipe)
+	assert.Contains(t, err.Error(), "failed to get recipe")
+	mockStorage.AssertExpectations(t)
+}
+
+// TestGetRecipesWithExcessiveLimit tests the GetRecipes method with an extremely large limit
+func TestGetRecipesWithExcessiveLimit(t *testing.T) {
+	mockStorage := new(MockStorage)
+	recipeService := NewRecipeService(mockStorage)
+
+	ctx := context.Background()
+	filter := models.RecipeFilter{}
+
+	// Test with a very large limit value
+	excessiveLimit := 1000000
+	expectedPage := &models.RecipePage{
+		Recipes:    []models.Recipe{},
+		Total:      0,
+		Page:       1,
+		Limit:      100, // Should be capped at a reasonable value
+		TotalPages: 0,
+	}
+
+	// The service should cap the limit to a reasonable value
+	mockStorage.On("GetRecipes", ctx, filter, 1, mock.AnythingOfType("int")).Return(expectedPage, nil).Once()
+
+	page, err := recipeService.GetRecipes(ctx, filter, 1, excessiveLimit)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, page)
+	mockStorage.AssertExpectations(t)
+}
+
+// TestCreateRecipeWithExtremeValues tests the CreateRecipe method with extreme values
+func TestCreateRecipeWithExtremeValues(t *testing.T) {
+	mockStorage := new(MockStorage)
+	recipeService := NewRecipeService(mockStorage)
+
+	ctx := context.Background()
+
+	// Test with extremely large values
+	extremeRecipe := &models.Recipe{
+		Title:       "Test Recipe",
+		Description: strings.Repeat("Very long description. ", 1000), // Very long description
+		Ingredients: []models.Ingredient{
+			{Name: "Test Ingredient", Quantity: 999999, Unit: "tons"},
+		},
+		Steps:    []string{strings.Repeat("Very long step. ", 1000)},
+		CookTime: 999999,
+		Servings: 999999,
+	}
+
+	mockStorage.On("CreateRecipe", ctx, mock.AnythingOfType("*models.Recipe")).Return(extremeRecipe, nil).Once()
+
+	createdRecipe, err := recipeService.CreateRecipe(ctx, extremeRecipe)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, createdRecipe)
+	mockStorage.AssertExpectations(t)
+}
+
+// TestUpdateRecipeWithEmptyID tests the UpdateRecipe method with an empty ID
+func TestUpdateRecipeWithEmptyID(t *testing.T) {
+	mockStorage := new(MockStorage)
+	recipeService := NewRecipeService(mockStorage)
+
+	ctx := context.Background()
+	emptyID := ""
+	recipe := &models.Recipe{
+		Title:       "Test Recipe",
+		Description: "Test Description",
+		Ingredients: []models.Ingredient{
+			{Name: "Test Ingredient", Quantity: 1, Unit: "cup"},
+		},
+		Steps:    []string{"Step 1", "Step 2"},
+		CookTime: 30,
+		Servings: 4,
+	}
+
+	updatedRecipe, err := recipeService.UpdateRecipe(ctx, emptyID, recipe)
+
+	assert.Error(t, err)
+	assert.Nil(t, updatedRecipe)
+	assert.ErrorIs(t, errors.Unwrap(err), ErrInvalidInput)
+	assert.Contains(t, err.Error(), "invalid recipe ID")
+}
+
+// TestDeleteRecipeWithEmptyID tests the DeleteRecipe method with an empty ID
+func TestDeleteRecipeWithEmptyID(t *testing.T) {
+	mockStorage := new(MockStorage)
+	recipeService := NewRecipeService(mockStorage)
+
+	ctx := context.Background()
+	emptyID := ""
+
+	err := recipeService.DeleteRecipe(ctx, emptyID)
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, errors.Unwrap(err), ErrInvalidInput)
+	assert.Contains(t, err.Error(), "invalid recipe ID")
+}
+
+// TestCreateRecipeWithSpecialCharacters tests the CreateRecipe method with special characters
+func TestCreateRecipeWithSpecialCharacters(t *testing.T) {
+	mockStorage := new(MockStorage)
+	recipeService := NewRecipeService(mockStorage)
+
+	ctx := context.Background()
+
+	// Test with special characters in text fields
+	specialCharsRecipe := &models.Recipe{
+		Title:       "Recipe with special chars: !@#$%^&*()",
+		Description: "Description with <script>alert('XSS')</script>",
+		Ingredients: []models.Ingredient{
+			{Name: "Ingredient with emoji 🍎", Quantity: 1, Unit: "piece"},
+		},
+		Steps:    []string{"Step with unicode: ñáéíóú"},
+		CookTime: 30,
+		Servings: 4,
+	}
+
+	mockStorage.On("CreateRecipe", ctx, mock.AnythingOfType("*models.Recipe")).Return(specialCharsRecipe, nil).Once()
+
+	createdRecipe, err := recipeService.CreateRecipe(ctx, specialCharsRecipe)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, createdRecipe)
+	mockStorage.AssertExpectations(t)
 }

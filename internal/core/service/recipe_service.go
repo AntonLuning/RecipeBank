@@ -10,16 +10,20 @@ import (
 )
 
 type RecipeService struct {
-	storage storage.RecipeRepository
+	storage storage.RecipeStorage
 }
 
-func NewRecipeService(storage storage.RecipeRepository) *RecipeService {
+func NewRecipeService(storage storage.RecipeStorage) *RecipeService {
 	return &RecipeService{
 		storage: storage,
 	}
 }
 
 func (s *RecipeService) GetRecipe(ctx context.Context, id string) (*models.Recipe, error) {
+	if id == "" {
+		return nil, fmt.Errorf("%w: invalid recipe ID", ErrInvalidInput)
+	}
+
 	recipe, err := s.storage.GetRecipeByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get recipe: %w", err)
@@ -27,10 +31,8 @@ func (s *RecipeService) GetRecipe(ctx context.Context, id string) (*models.Recip
 	return recipe, nil
 }
 
-func (s *RecipeService) GetRecipes(ctx context.Context, filter models.RecipeFilter, page, limit int) (*models.RecipePage, error) {
-	if page < 1 || limit < 1 {
-		return nil, fmt.Errorf("%w: page and limit must be positive", ErrInvalidInput)
-	}
+func (s *RecipeService) GetRecipes(ctx context.Context, filter models.RecipeFilter, page int, limit int) (*models.RecipePage, error) {
+	// No validation here - let storage handle default values
 
 	recipes, err := s.storage.GetRecipes(ctx, filter, page, limit)
 	if err != nil {
@@ -55,6 +57,10 @@ func (s *RecipeService) CreateRecipe(ctx context.Context, recipe *models.Recipe)
 }
 
 func (s *RecipeService) UpdateRecipe(ctx context.Context, id string, recipe *models.Recipe) (*models.Recipe, error) {
+	if id == "" {
+		return nil, fmt.Errorf("%w: invalid recipe ID", ErrInvalidInput)
+	}
+
 	if err := validateRecipe(recipe); err != nil {
 		return nil, fmt.Errorf("%w: %s", ErrValidation, err.Error())
 	}
@@ -69,6 +75,10 @@ func (s *RecipeService) UpdateRecipe(ctx context.Context, id string, recipe *mod
 }
 
 func (s *RecipeService) DeleteRecipe(ctx context.Context, id string) error {
+	if id == "" {
+		return fmt.Errorf("%w: invalid recipe ID", ErrInvalidInput)
+	}
+
 	if err := s.storage.DeleteRecipe(ctx, id); err != nil {
 		return fmt.Errorf("failed to delete recipe: %w", err)
 	}

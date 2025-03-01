@@ -30,7 +30,7 @@ type StorageConfig struct {
 }
 
 // NewMongoStorage creates a new MongoDB storage implementation
-func NewMongoStorage(ctx context.Context, config StorageConfig) (RecipeRepository, error) {
+func NewMongoStorage(ctx context.Context, config StorageConfig) (RecipeStorage, error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
@@ -226,8 +226,9 @@ func (s *MongoStorage) DeleteRecipe(ctx context.Context, id string) error {
 		return fmt.Errorf("failed to delete recipe: %w", err)
 	}
 
+	// Check if a document was actually deleted
 	if result.DeletedCount == 0 {
-		return fmt.Errorf("recipe not found with ID: %s", id)
+		return fmt.Errorf("%w: recipe with ID %s", ErrNotFound, id)
 	}
 
 	return nil
