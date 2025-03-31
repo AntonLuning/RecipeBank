@@ -1,0 +1,2 @@
+- Handle app config with github.com/caarlos0/env/v11
+- Generate API docs with github.com/swaggo/swag

@@ -32,7 +32,7 @@ func (s *RecipeService) GetRecipe(ctx context.Context, id string) (*models.Recip
 }
 
 func (s *RecipeService) GetRecipes(ctx context.Context, filter models.RecipeFilter, page int, limit int) (*models.RecipePage, error) {
-	// No validation here - let storage handle default values
+	// No validation here - storage layer handles default values
 
 	recipes, err := s.storage.GetRecipes(ctx, filter, page, limit)
 	if err != nil {
@@ -85,7 +85,6 @@ func (s *RecipeService) DeleteRecipe(ctx context.Context, id string) error {
 	return nil
 }
 
-// validateRecipe performs business logic validation on recipe data
 func validateRecipe(recipe *models.Recipe) error {
 	if recipe == nil {
 		return fmt.Errorf("recipe cannot be nil")

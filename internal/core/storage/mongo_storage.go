@@ -13,7 +13,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// MongoStorage implements RecipeRepository using MongoDB
 type MongoStorage struct {
 	client      *mongo.Client
 	db          *mongo.Database
@@ -29,12 +28,10 @@ type StorageConfig struct {
 	Database string
 }
 
-// NewMongoStorage creates a new MongoDB storage implementation
 func NewMongoStorage(ctx context.Context, config StorageConfig) (RecipeStorage, error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	// Construct the connection string
 	uri := fmt.Sprintf("mongodb://%s:%s@%s:%d",
 		config.Username,
 		config.Password,
@@ -62,6 +59,41 @@ func NewMongoStorage(ctx context.Context, config StorageConfig) (RecipeStorage, 
 		db:         db,
 		collection: collection,
 	}, nil
+}
+
+func (s *MongoStorage) Initialize(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	if s.initialized {
+		return nil
+	}
+
+	indexes := []mongo.IndexModel{
+		{
+			Keys: bson.D{
+				{Key: "title", Value: "text"},
+				{Key: "description", Value: "text"},
+			},
+			Options: options.Index().SetName("text_search"),
+		},
+		{
+			Keys:    bson.D{{Key: "tags", Value: 1}},
+			Options: options.Index().SetName("tags"),
+		},
+		{
+			Keys:    bson.D{{Key: "ingredients.name", Value: 1}},
+			Options: options.Index().SetName("ingredients_name"),
+		},
+	}
+
+	_, err := s.collection.Indexes().CreateMany(ctx, indexes)
+	if err != nil {
+		return fmt.Errorf("%w: failed to create indexes: %v", ErrDatabaseError, err)
+	}
+
+	s.initialized = true
+	return nil
 }
 
 func (s *MongoStorage) Close(ctx context.Context) error {
@@ -109,7 +141,6 @@ func (s *MongoStorage) GetRecipes(ctx context.Context, filter models.RecipeFilte
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	// Add input validation
 	if page < 1 {
 		page = 1
 	}
@@ -120,7 +151,6 @@ func (s *MongoStorage) GetRecipes(ctx context.Context, filter models.RecipeFilte
 		limit = 100 // Maximum limit to prevent excessive data fetching
 	}
 
-	// Convert RecipeFilter to bson.M
 	bsonFilter := bson.M{}
 	if filter.Title != "" {
 		bsonFilter["title"] = bson.M{"$regex": primitive.Regex{Pattern: filter.Title, Options: "i"}}
@@ -140,7 +170,6 @@ func (s *MongoStorage) GetRecipes(ctx context.Context, filter models.RecipeFilte
 		bsonFilter["tags"] = bson.M{"$all": filter.Tags}
 	}
 
-	// Count total documents
 	total, err := s.collection.CountDocuments(ctx, bsonFilter)
 	if err != nil {
 		return nil, fmt.Errorf("%w: failed to count documents: %v", ErrDatabaseError, err)
@@ -226,45 +255,9 @@ func (s *MongoStorage) DeleteRecipe(ctx context.Context, id string) error {
 		return fmt.Errorf("failed to delete recipe: %w", err)
 	}
 
-	// Check if a document was actually deleted
 	if result.DeletedCount == 0 {
 		return fmt.Errorf("%w: recipe with ID %s", ErrNotFound, id)
 	}
 
-	return nil
-}
-
-func (s *MongoStorage) Initialize(ctx context.Context) error {
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
-
-	if s.initialized {
-		return nil
-	}
-
-	indexes := []mongo.IndexModel{
-		{
-			Keys: bson.D{
-				{Key: "title", Value: "text"},
-				{Key: "description", Value: "text"},
-			},
-			Options: options.Index().SetName("text_search"),
-		},
-		{
-			Keys:    bson.D{{Key: "tags", Value: 1}},
-			Options: options.Index().SetName("tags"),
-		},
-		{
-			Keys:    bson.D{{Key: "ingredients.name", Value: 1}},
-			Options: options.Index().SetName("ingredients_name"),
-		},
-	}
-
-	_, err := s.collection.Indexes().CreateMany(ctx, indexes)
-	if err != nil {
-		return fmt.Errorf("%w: failed to create indexes: %v", ErrDatabaseError, err)
-	}
-
-	s.initialized = true
 	return nil
 }
