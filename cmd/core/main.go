@@ -13,13 +13,15 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	cfg := core.Config()
+
 	dbConfig := storage.StorageConfig{
-		Host:     "localhost",
-		Port:     27017,
-		Username: "root",
-		Password: "example",
-		Database: "recipes_db",
-	} // TODO: use github.com/caarlos0/env/v11 for configuration parameters
+		Host:     cfg.Database.Host,
+		Port:     int(cfg.Database.Port),
+		Username: cfg.Database.Username,
+		Password: cfg.Database.Password,
+		Database: cfg.Database.Database,
+	}
 
 	// Create storage
 	storage, err := storage.NewMongoStorage(ctx, dbConfig)
@@ -45,8 +47,7 @@ func main() {
 	recipeService := service.NewRecipeService(storage)
 
 	// Initialize API server
-	serverAddr := ":7777"
-	server := core.NewAPIServer(serverAddr, recipeService)
+	server := core.NewAPIServer(cfg.AppAddress(), recipeService)
 
 	// Start the server
 	if err := server.Run(); err != nil {

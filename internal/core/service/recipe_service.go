@@ -103,7 +103,7 @@ func validateRecipe(recipe *models.Recipe) error {
 			return fmt.Errorf("ingredient %d must have a name", i+1)
 		}
 		if ingredient.Quantity <= 0 {
-			return fmt.Errorf("ingredient %d must have a positive quantity", i+1)
+			return fmt.Errorf("ingredient %s must have a positive quantity", ingredient.Name)
 		}
 	}
 

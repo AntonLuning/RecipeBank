@@ -292,14 +292,7 @@ func extractParamNameFromError(errMsg string) string {
 
 // extractValidationDetails creates a user-friendly validation error message
 func extractValidationDetails(errMsg string) string {
-	if strings.Contains(errMsg, "required") {
-		return "One or more required fields are missing"
-	}
-	if strings.Contains(errMsg, "min") {
-		return "One or more fields do not meet minimum requirements"
-	}
-
-	return "The provided data failed validation requirements"
+	return strings.TrimPrefix(errMsg, "validation error: ")
 }
 
 // extractInputErrorDetails creates a user-friendly input error message

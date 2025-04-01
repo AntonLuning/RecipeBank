@@ -3,6 +3,7 @@ module github.com/AntonLuning/RecipeBank
 go 1.22.2
 
 require (
+	github.com/caarlos0/env/v11 v11.3.1
 	github.com/stretchr/testify v1.10.0
 	github.com/testcontainers/testcontainers-go v0.35.0
 	go.mongodb.org/mongo-driver v1.17.2

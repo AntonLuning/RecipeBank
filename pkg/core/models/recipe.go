@@ -12,9 +12,9 @@ type Recipe struct {
 	Description string             `bson:"description" json:"description"`
 	Ingredients []Ingredient       `bson:"ingredients" json:"ingredients"`
 	Steps       []string           `bson:"steps" json:"steps"`
-	CookTime    int                `bson:"cook_time" json:"cook_time"` // in minutes
-	Servings    int                `bson:"servings" json:"servings"`
-	Tags        []string           `bson:"tags" json:"tags"`
+	CookTime    int                `bson:"cook_time" json:"cook_time,omitempty"` // in minutes
+	Servings    int                `bson:"servings" json:"servings,omitempty"`
+	Tags        []string           `bson:"tags" json:"tags,omitempty"`
 	CreatedAt   time.Time          `bson:"created_at" json:"created_at"`
 	UpdatedAt   time.Time          `bson:"updated_at" json:"updated_at"`
 }
