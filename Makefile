@@ -1,6 +1,8 @@
 MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 MAKEFILE_DIR := $(shell dirname $(MAKEFILE_PATH))
+
 BIN_PATH := "$(MAKEFILE_DIR)/bin"
+ASSETS_PATH := "$(BIN_PATH)/assets"
 
 MONGO_PASSWORD := my_mongo_password
 
@@ -18,6 +20,14 @@ run-api:
 		RP_DB_DATABASE="recipes_db" &&\
 	go run cmd/core/main.go
 
+.PHONY: run-ui
+run-ui: setup-ui-assets
+	@mkdir -p $(BIN_PATH)
+	@export \
+		RP_UI_DEBUG="true" \
+		RP_UI_ASSETS_PATH="$(ASSETS_PATH)" &&\
+	go run cmd/ui/main.go
+
 .PHONY: test
 test:
 	@go test ./...
@@ -34,3 +44,20 @@ mongo-start:
 mongo-stop:
 	@docker stop mongodb-recipebank
 	@docker rm mongodb-recipebank
+
+.PHONY: setup-ui-assets
+setup-ui-assets: compile_tailwind generate_templ
+	@mkdir -p $(ASSETS_PATH)/js
+	@find $(MAKEFILE_DIR)/3rd -type f \( -name "*.js" \) | \
+	while IFS= read -r file; do \
+		cp "$$file" $(ASSETS_PATH)/js/; \
+	done
+	@mkdir -p $(ASSETS_PATH)/img
+
+.PHONY: compile_tailwind
+compile_tailwind:
+	@cd $(MAKEFILE_DIR)/tailwind && npx tailwindcss -i $(MAKEFILE_DIR)/internal/ui/views/static/css/input.css -o $(ASSETS_PATH)/css/output.css
+
+.PHONY: generate_templ
+generate_templ:
+	@templ generate -path $(MAKEFILE_DIR)/internal/ui/views/

@@ -1,2 +1,4 @@
 .cursor
 /bin
+
+/tailwind/node_modules

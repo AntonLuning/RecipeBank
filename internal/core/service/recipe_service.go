@@ -117,11 +117,11 @@ func validateRecipe(recipe *models.Recipe) error {
 		}
 	}
 
-	if recipe.CookTime <= 0 {
+	if recipe.CookTime < 0 {
 		return fmt.Errorf("cook time must be positive")
 	}
 
-	if recipe.Servings <= 0 {
+	if recipe.Servings < 0 {
 		return fmt.Errorf("servings must be positive")
 	}
 
