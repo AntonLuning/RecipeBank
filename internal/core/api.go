@@ -52,6 +52,10 @@ func (s *APIServer) v1Mux() http.Handler {
 	v1Mux.HandleFunc("PUT /recipe/{id}", makeHTTPHandlerFunc(s.handlePutRecipe))
 	v1Mux.HandleFunc("DELETE /recipe/{id}", makeHTTPHandlerFunc(s.handleDeleteRecipe))
 
+	// AI-powered recipe creation
+	v1Mux.HandleFunc("POST /recipe/from-image", makeHTTPHandlerFunc(s.handlePostRecipeFromImage))
+	v1Mux.HandleFunc("POST /recipe/from-url", makeHTTPHandlerFunc(s.handlePostRecipeFromURL))
+
 	return v1Mux
 }
 
@@ -133,6 +137,34 @@ func (s *APIServer) handleDeleteRecipe(ctx context.Context, w http.ResponseWrite
 	return writeSuccessResponse(w, http.StatusNoContent, nil)
 }
 
+func (s *APIServer) handlePostRecipeFromImage(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	var req models.CreateRecipeFromImageRequest
+	if err := s.parseJSONBody(w, r, &req); err != nil {
+		return err
+	}
+
+	recipe, err := s.service.CreateRecipeFromImage(ctx, req.Image, req.ImageType)
+	if err != nil {
+		return err
+	}
+
+	return writeSuccessResponse(w, http.StatusCreated, recipe)
+}
+
+func (s *APIServer) handlePostRecipeFromURL(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	var req models.CreateRecipeFromUrlRequest
+	if err := s.parseJSONBody(w, r, &req); err != nil {
+		return err
+	}
+
+	recipe, err := s.service.CreateRecipeFromURL(ctx, req.URL)
+	if err != nil {
+		return err
+	}
+
+	return writeSuccessResponse(w, http.StatusCreated, recipe)
+}
+
 func makeHTTPHandlerFunc(apiFn apiFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.Background()
@@ -177,6 +209,7 @@ func makeHTTPHandlerFunc(apiFn apiFunc) http.HandlerFunc {
 }
 
 // Helper functions
+
 func (s *APIServer) parseJSONBody(w http.ResponseWriter, r *http.Request, v interface{}) error {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20) // 1 MB limit
 	err := json.NewDecoder(r.Body).Decode(v)
@@ -187,7 +220,7 @@ func (s *APIServer) parseJSONBody(w http.ResponseWriter, r *http.Request, v inte
 }
 
 func createRecipeFromRequest(req models.RecipeRequest) *models.Recipe {
-	recipe := &models.Recipe{
+	return &models.Recipe{
 		Title:       req.Title,
 		Description: req.Description,
 		Ingredients: req.Ingredients,
@@ -196,7 +229,6 @@ func createRecipeFromRequest(req models.RecipeRequest) *models.Recipe {
 		Servings:    req.Servings,
 		Tags:        req.Tags,
 	}
-	return recipe
 }
 
 func writeJSON(w http.ResponseWriter, statusCode int, content any) error {
@@ -276,7 +308,6 @@ func parseIntParam(q url.Values, key string, defaultValue int) (int, error) {
 
 // Helper functions for extracting user-safe error details
 
-// extractParamNameFromError extracts the name of the parameter from the error message
 func extractParamNameFromError(errMsg string) string {
 	if strings.Contains(errMsg, "parameter") {
 		parts := strings.Split(errMsg, "parameter")
@@ -291,19 +322,16 @@ func extractParamNameFromError(errMsg string) string {
 	return ""
 }
 
-// extractValidationDetails creates a user-friendly validation error message
 func extractValidationDetails(errMsg string) string {
 	return strings.TrimPrefix(errMsg, "validation error: ")
 }
 
-// extractInputErrorDetails creates a user-friendly input error message
 func extractInputErrorDetails(_ string) string {
-	// This can be enhanced to parse specific input error types
+	// TODO:This can be enhanced to parse specific input error types
 
 	return "The provided input data is invalid or incomplete"
 }
 
-// extractResourceTypeFromError attempts to extract the resource type from not found errors
 func extractResourceTypeFromError(errMsg string) string {
 	// Default resource type
 	resourceType := "resource"

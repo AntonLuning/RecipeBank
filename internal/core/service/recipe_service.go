@@ -59,6 +59,49 @@ func (s *RecipeService) CreateRecipe(ctx context.Context, recipe *models.Recipe)
 	return createdRecipe, nil
 }
 
+func (s *RecipeService) CreateRecipeFromImage(ctx context.Context, image string, imageType string) (*models.Recipe, error) {
+	// Validate image
+	if err := validateBase64Image(image, imageType); err != nil {
+		return nil, fmt.Errorf("%w: image is not a valid %s (base64 encoded) or type is not supported", ErrValidation, imageType)
+	}
+
+	// Convert imageType to ImageContentType
+	var imageContentType ai.ImageContentType
+	switch imageType {
+	case "jpeg", "jpg":
+		imageContentType = ai.ImageContentTypeJPEG
+	case "png":
+		imageContentType = ai.ImageContentTypePNG
+	default:
+		return nil, fmt.Errorf("%w: image type %s is not supported", ErrValidation, imageType)
+	}
+
+	_, err := s.ai.AnalyzeImage(ctx, image, imageContentType, "recipe") // TODO: prompt and structured output
+	if err != nil {
+		return nil, fmt.Errorf("failed to create recipe from image: %w", err)
+	}
+
+	// TODO: save recipe to storage
+
+	return nil, nil
+}
+
+func (s *RecipeService) CreateRecipeFromURL(ctx context.Context, url string) (*models.Recipe, error) {
+	// Validate URL and the it exists
+	if err := validateURL(url); err != nil {
+		return nil, fmt.Errorf("%w: URL could not be found: %s", ErrValidation, url)
+	}
+
+	_, err := s.ai.AnalyzeURL(ctx, url, "recipe") // TODO: prompt and structured output
+	if err != nil {
+		return nil, fmt.Errorf("failed to create recipe from URL: %w", err)
+	}
+
+	// TODO: save recipe to storage
+
+	return nil, nil
+}
+
 func (s *RecipeService) UpdateRecipe(ctx context.Context, id string, recipe *models.Recipe) (*models.Recipe, error) {
 	if id == "" {
 		return nil, fmt.Errorf("%w: invalid recipe ID", ErrInvalidInput)

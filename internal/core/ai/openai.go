@@ -32,7 +32,7 @@ func NewOpenAI(apiKey string, model string) AI {
 }
 
 func (c *OpenAI) AnalyzeImage(ctx context.Context, base64Image string, imageContentType ImageContentType, prompt string) (string, error) {
-	// Encode the image as base64
+	// Create the data URI for the image
 	dataURI := fmt.Sprintf("data:%s;base64,%s", imageContentType, base64Image)
 
 	// Create the request body

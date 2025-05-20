@@ -21,6 +21,15 @@ type RecipeRequest struct {
 type CreateRecipeRequest = RecipeRequest
 type UpdateRecipeRequest = RecipeRequest
 
+type CreateRecipeFromImageRequest struct {
+	Image     string `json:"image"`      // Base64 encoded image
+	ImageType string `json:"image_type"` // "jpeg", "jpg", "png"
+}
+
+type CreateRecipeFromUrlRequest struct {
+	URL string `json:"url"` // URL to a webpage with recipe or to an image of a recipe
+}
+
 // Response models
 type APIResponse struct {
 	Success bool      `json:"success"`

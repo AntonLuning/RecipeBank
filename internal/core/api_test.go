@@ -57,6 +57,24 @@ func (m *MockService) CreateRecipe(ctx context.Context, recipe *models.Recipe) (
 	return args.Get(0).(*models.Recipe), args.Error(1)
 }
 
+// CreateRecipeFromURL mocks the CreateRecipeFromURL method
+func (m *MockService) CreateRecipeFromURL(ctx context.Context, url string) (*models.Recipe, error) {
+	args := m.Called(ctx, url)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.Recipe), args.Error(1)
+}
+
+// CreateRecipeFromImage mocks the CreateRecipeFromImage method
+func (m *MockService) CreateRecipeFromImage(ctx context.Context, image string, imageType string) (*models.Recipe, error) {
+	args := m.Called(ctx, image, imageType)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.Recipe), args.Error(1)
+}
+
 // UpdateRecipe mocks the UpdateRecipe method
 func (m *MockService) UpdateRecipe(ctx context.Context, id string, recipe *models.Recipe) (*models.Recipe, error) {
 	args := m.Called(ctx, id, recipe)
