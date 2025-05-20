@@ -28,10 +28,6 @@ run-ui: setup-ui-assets
 		RP_UI_ASSETS_PATH="$(ASSETS_PATH)" &&\
 	go run cmd/ui/main.go
 
-.PHONY: test
-test:
-	@go test ./...
-
 .PHONY: mongo-start
 mongo-start:
 	@docker run -d --name mongodb-recipebank \
@@ -61,3 +57,16 @@ compile_tailwind:
 .PHONY: generate_templ
 generate_templ:
 	@templ generate -path $(MAKEFILE_DIR)/internal/ui/views/
+
+
+.PHONY: test
+test:
+	@go test ./... -v
+
+.PHONY: test-ai
+test-ai:
+	@export \
+		OPENAI_API_KEY=$(shell cat secrets/openai_key) \
+		TEST_IMAGE_PATH="$(MAKEFILE_DIR)/testdata/test_image.jpg" &&\
+	go test ./internal/core/ai/... -v
+

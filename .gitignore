@@ -1,4 +1,5 @@
 .cursor
 /bin
+/secrets
 
 /tailwind/node_modules
