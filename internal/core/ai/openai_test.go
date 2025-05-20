@@ -1,8 +1,8 @@
 package ai
 
 import (
-	"bytes"
 	"context"
+	"encoding/base64"
 	"os"
 	"testing"
 	"time"
@@ -63,7 +63,7 @@ func TestAnalyzeImage(t *testing.T) {
 	imageFile, err := os.ReadFile(imagePath)
 	require.NoError(t, err, "Failed to read test image file")
 
-	imageBuffer := bytes.NewBuffer(imageFile)
+	base64Image := base64.StdEncoding.EncodeToString(imageFile)
 
 	// Determine content type based on file extension
 	contentType := ImageContentTypeJPEG
@@ -74,7 +74,7 @@ func TestAnalyzeImage(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	result, err := client.AnalyzeImage(ctx, *imageBuffer, contentType, "What is this image? Keep it brief.")
+	result, err := client.AnalyzeImage(ctx, base64Image, contentType, "What is this image? Keep it brief.")
 	require.NoError(t, err)
 	assert.NotEmpty(t, result)
 	t.Logf("Image analysis result: %s", result)
@@ -98,11 +98,11 @@ func TestAnalyzeImage_InvalidAPIKey(t *testing.T) {
 	client := NewOpenAI("invalid-api-key", "")
 
 	imageData := []byte("fake-image-data")
-	imageBuffer := bytes.NewBuffer(imageData)
+	base64Image := base64.StdEncoding.EncodeToString(imageData)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	_, err := client.AnalyzeImage(ctx, *imageBuffer, ImageContentTypeJPEG, "What is this image?")
+	_, err := client.AnalyzeImage(ctx, base64Image, ImageContentTypeJPEG, "What is this image?")
 	assert.Error(t, err)
 }

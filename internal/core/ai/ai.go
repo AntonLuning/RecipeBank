@@ -1,11 +1,10 @@
 package ai
 
 import (
-	"bytes"
 	"context"
 )
 
 type AI interface {
-	AnalyzeImage(ctx context.Context, image bytes.Buffer, imageContentType ImageContentType, prompt string) (string, error)
+	AnalyzeImage(ctx context.Context, base64Image string, imageContentType ImageContentType, prompt string) (string, error)
 	AnalyzeURL(ctx context.Context, url string, prompt string) (string, error)
 }

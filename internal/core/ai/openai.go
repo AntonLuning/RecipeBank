@@ -1,9 +1,7 @@
 package ai
 
 import (
-	"bytes"
 	"context"
-	"encoding/base64"
 	"fmt"
 
 	"github.com/openai/openai-go"
@@ -33,9 +31,8 @@ func NewOpenAI(apiKey string, model string) AI {
 	}
 }
 
-func (c *OpenAI) AnalyzeImage(ctx context.Context, image bytes.Buffer, imageContentType ImageContentType, prompt string) (string, error) {
+func (c *OpenAI) AnalyzeImage(ctx context.Context, base64Image string, imageContentType ImageContentType, prompt string) (string, error) {
 	// Encode the image as base64
-	base64Image := base64.StdEncoding.EncodeToString(image.Bytes())
 	dataURI := fmt.Sprintf("data:%s;base64,%s", imageContentType, base64Image)
 
 	// Create the request body
