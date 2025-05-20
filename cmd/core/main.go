@@ -5,6 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/AntonLuning/RecipeBank/internal/core"
+	"github.com/AntonLuning/RecipeBank/internal/core/ai"
 	"github.com/AntonLuning/RecipeBank/internal/core/service"
 	"github.com/AntonLuning/RecipeBank/internal/core/storage"
 )
@@ -43,8 +44,17 @@ func main() {
 		return
 	}
 
+	// Initialize AI client
+	var aiClient ai.AI = nil
+	switch cfg.AI.Provider {
+	case "openai":
+		aiClient = ai.NewOpenAI(cfg.AI.APIKey, cfg.AI.Model)
+	default:
+		slog.Warn("Empty or unsupported AI provider, running without AI", "provider", cfg.AI.Provider)
+	}
+
 	// Initialize service layer
-	recipeService := service.NewRecipeService(storage)
+	recipeService := service.NewRecipeService(storage, aiClient)
 
 	// Initialize API server
 	server := core.NewAPIServer(cfg.AppAddress(), recipeService)

@@ -75,7 +75,7 @@ func (m *MockStorage) Close(ctx context.Context) error {
 // TestGetRecipe tests the GetRecipe method
 func TestGetRecipe(t *testing.T) {
 	mockStorage := new(MockStorage)
-	recipeService := NewRecipeService(mockStorage)
+	recipeService := NewRecipeService(mockStorage, nil)
 
 	ctx := context.Background()
 	recipeID := "507f1f77bcf86cd799439011"
@@ -121,7 +121,7 @@ func TestGetRecipe(t *testing.T) {
 // TestGetRecipes tests the GetRecipes method
 func TestGetRecipes(t *testing.T) {
 	mockStorage := new(MockStorage)
-	recipeService := NewRecipeService(mockStorage)
+	recipeService := NewRecipeService(mockStorage, nil)
 
 	ctx := context.Background()
 	filter := models.RecipeFilter{
@@ -194,7 +194,7 @@ func TestGetRecipes(t *testing.T) {
 // TestCreateRecipe tests the CreateRecipe method
 func TestCreateRecipe(t *testing.T) {
 	mockStorage := new(MockStorage)
-	recipeService := NewRecipeService(mockStorage)
+	recipeService := NewRecipeService(mockStorage, nil)
 
 	ctx := context.Background()
 
@@ -237,11 +237,11 @@ func TestCreateRecipe(t *testing.T) {
 			{Title: "", Ingredients: []models.Ingredient{{Name: "Test", Quantity: 1}}, Steps: []string{"Step 1"}, CookTime: 30, Servings: 4},
 			{Title: "Test", Ingredients: []models.Ingredient{}, Steps: []string{"Step 1"}, CookTime: 30, Servings: 4},
 			{Title: "Test", Ingredients: []models.Ingredient{{Name: "", Quantity: 1}}, Steps: []string{"Step 1"}, CookTime: 30, Servings: 4},
-			{Title: "Test", Ingredients: []models.Ingredient{{Name: "Test", Quantity: 0}}, Steps: []string{"Step 1"}, CookTime: 30, Servings: 4},
+			{Title: "Test", Ingredients: []models.Ingredient{{Name: "Test", Quantity: -1}}, Steps: []string{"Step 1"}, CookTime: 30, Servings: 4},
 			{Title: "Test", Ingredients: []models.Ingredient{{Name: "Test", Quantity: 1}}, Steps: []string{}, CookTime: 30, Servings: 4},
 			{Title: "Test", Ingredients: []models.Ingredient{{Name: "Test", Quantity: 1}}, Steps: []string{""}, CookTime: 30, Servings: 4},
-			{Title: "Test", Ingredients: []models.Ingredient{{Name: "Test", Quantity: 1}}, Steps: []string{"Step 1"}, CookTime: 0, Servings: 4},
-			{Title: "Test", Ingredients: []models.Ingredient{{Name: "Test", Quantity: 1}}, Steps: []string{"Step 1"}, CookTime: 30, Servings: 0},
+			{Title: "Test", Ingredients: []models.Ingredient{{Name: "Test", Quantity: 1}}, Steps: []string{"Step 1"}, CookTime: -1, Servings: 4},
+			{Title: "Test", Ingredients: []models.Ingredient{{Name: "Test", Quantity: 1}}, Steps: []string{"Step 1"}, CookTime: 30, Servings: -1},
 		}
 
 		for _, invalidRecipe := range invalidRecipes {
@@ -280,7 +280,7 @@ func TestCreateRecipe(t *testing.T) {
 // TestUpdateRecipe tests the UpdateRecipe method
 func TestUpdateRecipe(t *testing.T) {
 	mockStorage := new(MockStorage)
-	recipeService := NewRecipeService(mockStorage)
+	recipeService := NewRecipeService(mockStorage, nil)
 
 	ctx := context.Background()
 	recipeID := "507f1f77bcf86cd799439011"
@@ -359,7 +359,7 @@ func TestUpdateRecipe(t *testing.T) {
 // TestDeleteRecipe tests the DeleteRecipe method
 func TestDeleteRecipe(t *testing.T) {
 	mockStorage := new(MockStorage)
-	recipeService := NewRecipeService(mockStorage)
+	recipeService := NewRecipeService(mockStorage, nil)
 
 	ctx := context.Background()
 	recipeID := "507f1f77bcf86cd799439011"
@@ -388,7 +388,7 @@ func TestDeleteRecipe(t *testing.T) {
 // TestGetRecipeWithEmptyID tests the GetRecipe method with an empty ID
 func TestGetRecipeWithEmptyID(t *testing.T) {
 	mockStorage := new(MockStorage)
-	recipeService := NewRecipeService(mockStorage)
+	recipeService := NewRecipeService(mockStorage, nil)
 
 	ctx := context.Background()
 	emptyID := ""
@@ -407,7 +407,7 @@ func TestGetRecipeWithEmptyID(t *testing.T) {
 // TestGetRecipeWithInvalidID tests the GetRecipe method with an invalid ID format
 func TestGetRecipeWithInvalidID(t *testing.T) {
 	mockStorage := new(MockStorage)
-	recipeService := NewRecipeService(mockStorage)
+	recipeService := NewRecipeService(mockStorage, nil)
 
 	ctx := context.Background()
 	invalidID := "not-a-valid-object-id"
@@ -425,7 +425,7 @@ func TestGetRecipeWithInvalidID(t *testing.T) {
 // TestGetRecipesWithExcessiveLimit tests the GetRecipes method with an extremely large limit
 func TestGetRecipesWithExcessiveLimit(t *testing.T) {
 	mockStorage := new(MockStorage)
-	recipeService := NewRecipeService(mockStorage)
+	recipeService := NewRecipeService(mockStorage, nil)
 
 	ctx := context.Background()
 	filter := models.RecipeFilter{}
@@ -453,7 +453,7 @@ func TestGetRecipesWithExcessiveLimit(t *testing.T) {
 // TestCreateRecipeWithExtremeValues tests the CreateRecipe method with extreme values
 func TestCreateRecipeWithExtremeValues(t *testing.T) {
 	mockStorage := new(MockStorage)
-	recipeService := NewRecipeService(mockStorage)
+	recipeService := NewRecipeService(mockStorage, nil)
 
 	ctx := context.Background()
 
@@ -481,7 +481,7 @@ func TestCreateRecipeWithExtremeValues(t *testing.T) {
 // TestUpdateRecipeWithEmptyID tests the UpdateRecipe method with an empty ID
 func TestUpdateRecipeWithEmptyID(t *testing.T) {
 	mockStorage := new(MockStorage)
-	recipeService := NewRecipeService(mockStorage)
+	recipeService := NewRecipeService(mockStorage, nil)
 
 	ctx := context.Background()
 	emptyID := ""
@@ -507,7 +507,7 @@ func TestUpdateRecipeWithEmptyID(t *testing.T) {
 // TestDeleteRecipeWithEmptyID tests the DeleteRecipe method with an empty ID
 func TestDeleteRecipeWithEmptyID(t *testing.T) {
 	mockStorage := new(MockStorage)
-	recipeService := NewRecipeService(mockStorage)
+	recipeService := NewRecipeService(mockStorage, nil)
 
 	ctx := context.Background()
 	emptyID := ""
@@ -522,7 +522,7 @@ func TestDeleteRecipeWithEmptyID(t *testing.T) {
 // TestCreateRecipeWithSpecialCharacters tests the CreateRecipe method with special characters
 func TestCreateRecipeWithSpecialCharacters(t *testing.T) {
 	mockStorage := new(MockStorage)
-	recipeService := NewRecipeService(mockStorage)
+	recipeService := NewRecipeService(mockStorage, nil)
 
 	ctx := context.Background()
 

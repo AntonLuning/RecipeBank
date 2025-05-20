@@ -5,17 +5,20 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/AntonLuning/RecipeBank/internal/core/ai"
 	"github.com/AntonLuning/RecipeBank/internal/core/storage"
 	"github.com/AntonLuning/RecipeBank/pkg/core/models"
 )
 
 type RecipeService struct {
 	storage storage.RecipeStorage
+	ai      ai.AI
 }
 
-func NewRecipeService(storage storage.RecipeStorage) *RecipeService {
+func NewRecipeService(storage storage.RecipeStorage, ai ai.AI) *RecipeService {
 	return &RecipeService{
 		storage: storage,
+		ai:      ai,
 	}
 }
 
@@ -102,7 +105,7 @@ func validateRecipe(recipe *models.Recipe) error {
 		if ingredient.Name == "" {
 			return fmt.Errorf("ingredient %d must have a name", i+1)
 		}
-		if ingredient.Quantity <= 0 {
+		if ingredient.Quantity < 0 {
 			return fmt.Errorf("ingredient %s must have a positive quantity", ingredient.Name)
 		}
 	}

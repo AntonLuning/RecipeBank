@@ -17,6 +17,8 @@ type AppConfig struct {
 	Port uint16 `env:"PORT" envDefault:"9876"`
 	// Database configuration (MongoDB)
 	Database DatabaseConfig `envPrefix:"DB_"`
+	// AI configuration
+	AI AIConfig `envPrefix:"AI_"`
 }
 
 type DatabaseConfig struct {
@@ -30,6 +32,15 @@ type DatabaseConfig struct {
 	Password string `env:"PASSWORD_FILE,required,file"`
 	// Database name
 	Database string `env:"DATABASE,required"`
+}
+
+type AIConfig struct {
+	// AI provider
+	Provider string `env:"PROVIDER" envDefault:""`
+	// OpenAI API key
+	APIKey string `env:"API_KEY,required"`
+	// OpenAI model
+	Model string `env:"MODEL" envDefault:"gpt-4.1-mini-2025-04-14"`
 }
 
 func Config() AppConfig {

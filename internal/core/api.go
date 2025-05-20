@@ -268,7 +268,7 @@ func parseIntParam(q url.Values, key string, defaultValue int) (int, error) {
 
 	val, err := strconv.Atoi(str)
 	if err != nil {
-		return 0, fmt.Errorf("%w: invalid %s parameter: %v", ErrInvalidQueryParams, key, err)
+		return 0, fmt.Errorf("%w: %s parameter is invalid", ErrInvalidQueryParams, key)
 	}
 
 	return val, nil
@@ -276,11 +276,12 @@ func parseIntParam(q url.Values, key string, defaultValue int) (int, error) {
 
 // Helper functions for extracting user-safe error details
 
+// extractParamNameFromError extracts the name of the parameter from the error message
 func extractParamNameFromError(errMsg string) string {
 	if strings.Contains(errMsg, "parameter") {
 		parts := strings.Split(errMsg, "parameter")
 		if len(parts) > 1 {
-			paramPart := strings.TrimSpace(parts[0])
+			paramPart := strings.TrimSpace(parts[1])
 			paramParts := strings.Split(paramPart, " ")
 			if len(paramParts) > 0 {
 				return paramParts[len(paramParts)-1]

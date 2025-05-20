@@ -17,27 +17,23 @@ const (
 	ImageContentTypePNG  ImageContentType = "image/png"
 )
 
-type OpenAIClient struct {
+type OpenAI struct {
 	client openai.Client
 	model  string
 }
 
-func NewOpenAIClient(apiKey string, model string) *OpenAIClient {
-	if model == "" {
-		model = "gpt-4.1-mini-2025-04-14"
-	}
-
+func NewOpenAI(apiKey string, model string) AI {
 	client := openai.NewClient(
 		option.WithAPIKey(apiKey),
 	)
 
-	return &OpenAIClient{
+	return &OpenAI{
 		client: client,
 		model:  model,
 	}
 }
 
-func (c *OpenAIClient) AnalyzeImage(ctx context.Context, image bytes.Buffer, imageContentType ImageContentType, prompt string) (string, error) {
+func (c *OpenAI) AnalyzeImage(ctx context.Context, image bytes.Buffer, imageContentType ImageContentType, prompt string) (string, error) {
 	// Encode the image as base64
 	base64Image := base64.StdEncoding.EncodeToString(image.Bytes())
 	dataURI := fmt.Sprintf("data:%s;base64,%s", imageContentType, base64Image)
@@ -75,7 +71,7 @@ func (c *OpenAIClient) AnalyzeImage(ctx context.Context, image bytes.Buffer, ima
 	return chatCompletion.Choices[0].Message.Content, nil
 }
 
-func (c *OpenAIClient) AnalyzeURL(ctx context.Context, url string, prompt string) (string, error) {
+func (c *OpenAI) AnalyzeURL(ctx context.Context, url string, prompt string) (string, error) {
 	// Create the request body
 	params := openai.ChatCompletionNewParams{
 		Messages: []openai.ChatCompletionMessageParamUnion{

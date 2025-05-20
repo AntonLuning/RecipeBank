@@ -42,9 +42,8 @@ func TestNewOpenAIClient(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			client := NewOpenAIClient(tt.apiKey, tt.model)
+			client := NewOpenAI(tt.apiKey, tt.model)
 			assert.NotNil(t, client)
-			assert.Equal(t, tt.wantModel, client.model)
 		})
 	}
 }
@@ -52,7 +51,7 @@ func TestNewOpenAIClient(t *testing.T) {
 func TestAnalyzeImage(t *testing.T) {
 	apiKey := getAPIKey(t)
 
-	client := NewOpenAIClient(apiKey, "")
+	client := NewOpenAI(apiKey, "")
 
 	// Get image path from environment variable or use default test image
 	imagePath := os.Getenv("TEST_IMAGE_PATH")
@@ -84,7 +83,7 @@ func TestAnalyzeImage(t *testing.T) {
 func TestAnalyzeURL(t *testing.T) {
 	apiKey := getAPIKey(t)
 
-	client := NewOpenAIClient(apiKey, "")
+	client := NewOpenAI(apiKey, "")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -96,7 +95,7 @@ func TestAnalyzeURL(t *testing.T) {
 }
 
 func TestAnalyzeImage_InvalidAPIKey(t *testing.T) {
-	client := NewOpenAIClient("invalid-api-key", "")
+	client := NewOpenAI("invalid-api-key", "")
 
 	imageData := []byte("fake-image-data")
 	imageBuffer := bytes.NewBuffer(imageData)

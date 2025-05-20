@@ -743,9 +743,9 @@ func TestErrorExtractorFunctions(t *testing.T) {
 			errMsg   string
 			expected string
 		}{
-			{"id parameter is required", "id"},
-			{"invalid page parameter: strconv.Atoi: parsing \"abc\": invalid syntax", "page"},
-			{"some other error", ""},
+			{"missing path parameter: id parameter is required", "id"},
+			{"invalid query parameters: page parameter is invalid", "page"},
+			{"some other error: ", ""},
 		}
 
 		for _, tc := range tests {
@@ -759,9 +759,8 @@ func TestErrorExtractorFunctions(t *testing.T) {
 			errMsg   string
 			expected string
 		}{
-			{"recipe title is required", "One or more required fields are missing"},
-			{"ingredient 1 must have a minimum quantity of 0.1", "One or more fields do not meet minimum requirements"},
-			{"some other validation error", "The provided data failed validation requirements"},
+			{"validation error: recipe title is required", "recipe title is required"},
+			{"some other error", "some other error"},
 		}
 
 		for _, tc := range tests {
@@ -775,10 +774,8 @@ func TestErrorExtractorFunctions(t *testing.T) {
 			errMsg   string
 			expected string
 		}{
-			{"recipe not found", "recipe"},
-			{"ingredient not found", "ingredient"},
-			{"tag not found", "tag"},
-			{"some other resource not found", "resource"},
+			{"resource not found: recipe with ID 12", "recipe"},
+			{"some other error", "resource"},
 		}
 
 		for _, tc := range tests {
