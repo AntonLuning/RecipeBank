@@ -46,7 +46,7 @@ func (c *OpenAI) AnalyzeRecipeImage(ctx context.Context, base64Image string, ima
 	// Create the data URI for the image
 	dataURI := fmt.Sprintf("data:%s;base64,%s", imageContentType, base64Image)
 
-	// Create the prompt with JSON format instruction
+	// Create the prompt
 	prompt := fmt.Sprintf("Analyze the attached image of a recipe and extract the data. You must follow the rules below.\n\nOutput rules:\n%s",
 		_PromptRules)
 
@@ -104,12 +104,19 @@ func (c *OpenAI) AnalyzeRecipeImage(ctx context.Context, base64Image string, ima
 	return result, nil
 }
 
-func (c *OpenAI) AnalyzeRecipeURL(ctx context.Context, url string) (*RecipeAnalysisResult, error) {
+func (c *OpenAI) AnalyzeRecipeWebpage(ctx context.Context, url string) (*RecipeAnalysisResult, error) {
 	result := &RecipeAnalysisResult{}
 
-	prompt := fmt.Sprintf("Analyze the URL including a recipe and extract the data. You must follow the rules below.\n\nURL: %s\n\nOutput rules:\n%s",
-		url,
-		_PromptRules)
+	// Fetch the webpage
+	webpage, err := fetchWebpageBody(url)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch webpage: %w", err)
+	}
+
+	// Create the prompt
+	prompt := fmt.Sprintf("Analyze the webpage including a recipe and extract the data. You must follow the rules below.\n\nOutput rules:\n%s\n\nWebpage:\n%s",
+		_PromptRules,
+		webpage)
 
 	// Create the request body
 	params := openai.ChatCompletionNewParams{

@@ -90,7 +90,7 @@ func TestAnalyzeURL(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	result, err := client.AnalyzeRecipeURL(ctx, "https://www.ica.se/recept/klassisk-lasagne-679675/")
+	result, err := client.AnalyzeRecipeWebpage(ctx, "https://www.ica.se/recept/klassisk-lasagne-679675/")
 	require.NoError(t, err)
 	assert.NotEmpty(t, result)
 }

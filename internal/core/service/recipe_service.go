@@ -100,7 +100,7 @@ func (s *RecipeService) CreateRecipeFromURL(ctx context.Context, url string) (*m
 		return nil, fmt.Errorf("%w: URL could not be found: %s", ErrValidation, url)
 	}
 
-	result, err := s.ai.AnalyzeRecipeURL(ctx, url)
+	result, err := s.ai.AnalyzeRecipeWebpage(ctx, url)
 	if err != nil {
 		return nil, fmt.Errorf("%w: failed to create recipe from URL: %w", ErrAI, err)
 	}
