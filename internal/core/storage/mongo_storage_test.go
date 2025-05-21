@@ -595,7 +595,7 @@ func TestCreateRecipeWithLargeDocument(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		largeRecipe.Ingredients[i] = models.Ingredient{
 			Name:     fmt.Sprintf("Ingredient %d", i),
-			Quantity: i,
+			Quantity: float32(i),
 			Unit:     "unit",
 		}
 		largeRecipe.Steps[i] = fmt.Sprintf("Step %d: %s", i, strings.Repeat("Do something. ", 50))

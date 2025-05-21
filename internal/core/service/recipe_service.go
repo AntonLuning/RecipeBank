@@ -12,10 +12,10 @@ import (
 
 type RecipeService struct {
 	storage storage.RecipeStorage
-	ai      ai.AI
+	ai      ai.RecipeAI
 }
 
-func NewRecipeService(storage storage.RecipeStorage, ai ai.AI) *RecipeService {
+func NewRecipeService(storage storage.RecipeStorage, ai ai.RecipeAI) *RecipeService {
 	return &RecipeService{
 		storage: storage,
 		ai:      ai,
@@ -60,6 +60,10 @@ func (s *RecipeService) CreateRecipe(ctx context.Context, recipe *models.Recipe)
 }
 
 func (s *RecipeService) CreateRecipeFromImage(ctx context.Context, image string, imageType string) (*models.Recipe, error) {
+	if s.ai == nil {
+		return nil, fmt.Errorf("%w: AI is not enabled", ErrAIUnsupported)
+	}
+
 	// Validate image
 	if err := validateBase64Image(image, imageType); err != nil {
 		return nil, fmt.Errorf("%w: image is not a valid %s (base64 encoded) or type is not supported", ErrValidation, imageType)
@@ -67,6 +71,7 @@ func (s *RecipeService) CreateRecipeFromImage(ctx context.Context, image string,
 
 	// Convert imageType to ImageContentType
 	var imageContentType ai.ImageContentType
+
 	switch imageType {
 	case "jpeg", "jpg":
 		imageContentType = ai.ImageContentTypeJPEG
@@ -76,30 +81,31 @@ func (s *RecipeService) CreateRecipeFromImage(ctx context.Context, image string,
 		return nil, fmt.Errorf("%w: image type %s is not supported", ErrValidation, imageType)
 	}
 
-	_, err := s.ai.AnalyzeImage(ctx, image, imageContentType, "recipe") // TODO: prompt and structured output
+	// Analyze the image using AI
+	result, err := s.ai.AnalyzeRecipeImage(ctx, image, imageContentType)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create recipe from image: %w", err)
+		return nil, fmt.Errorf("%w: failed to create recipe from image: %w", ErrAI, err)
 	}
 
-	// TODO: save recipe to storage
-
-	return nil, nil
+	return s.CreateRecipe(ctx, newRecipeFromAnalysisResult(result))
 }
 
 func (s *RecipeService) CreateRecipeFromURL(ctx context.Context, url string) (*models.Recipe, error) {
+	if s.ai == nil {
+		return nil, fmt.Errorf("%w: AI is not enabled", ErrAIUnsupported)
+	}
+
 	// Validate URL and the it exists
 	if err := validateURL(url); err != nil {
 		return nil, fmt.Errorf("%w: URL could not be found: %s", ErrValidation, url)
 	}
 
-	_, err := s.ai.AnalyzeURL(ctx, url, "recipe") // TODO: prompt and structured output
+	result, err := s.ai.AnalyzeRecipeURL(ctx, url)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create recipe from URL: %w", err)
+		return nil, fmt.Errorf("%w: failed to create recipe from URL: %w", ErrAI, err)
 	}
 
-	// TODO: save recipe to storage
-
-	return nil, nil
+	return s.CreateRecipe(ctx, newRecipeFromAnalysisResult(result))
 }
 
 func (s *RecipeService) UpdateRecipe(ctx context.Context, id string, recipe *models.Recipe) (*models.Recipe, error) {
@@ -172,4 +178,15 @@ func validateRecipe(recipe *models.Recipe) error {
 	}
 
 	return nil
+}
+
+func newRecipeFromAnalysisResult(result *ai.RecipeAnalysisResult) *models.Recipe {
+	return &models.Recipe{
+		Title:       result.Title,
+		Description: result.Description,
+		Ingredients: result.Ingredients,
+		Steps:       result.Steps,
+		CookTime:    result.CookTime,
+		Servings:    result.Servings,
+	}
 }

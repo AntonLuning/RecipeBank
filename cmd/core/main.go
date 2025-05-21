@@ -45,7 +45,7 @@ func main() {
 	}
 
 	// Initialize AI client
-	var aiClient ai.AI = nil
+	var aiClient ai.RecipeAI = nil
 	switch cfg.AI.Provider {
 	case "openai":
 		aiClient = ai.NewOpenAI(cfg.AI.APIKey, cfg.AI.Model)

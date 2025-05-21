@@ -53,8 +53,8 @@ func (s *APIServer) v1Mux() http.Handler {
 	v1Mux.HandleFunc("DELETE /recipe/{id}", makeHTTPHandlerFunc(s.handleDeleteRecipe))
 
 	// AI-powered recipe creation
-	v1Mux.HandleFunc("POST /recipe/from-image", makeHTTPHandlerFunc(s.handlePostRecipeFromImage))
-	v1Mux.HandleFunc("POST /recipe/from-url", makeHTTPHandlerFunc(s.handlePostRecipeFromURL))
+	v1Mux.HandleFunc("POST /recipe/ai/from-image", makeHTTPHandlerFunc(s.handlePostRecipeFromImage))
+	v1Mux.HandleFunc("POST /recipe/ai/from-url", makeHTTPHandlerFunc(s.handlePostRecipeFromURL))
 
 	return v1Mux
 }
@@ -195,6 +195,10 @@ func makeHTTPHandlerFunc(apiFn apiFunc) http.HandlerFunc {
 				writeErrorResponse(w, http.StatusBadRequest, "validation_error", extractValidationDetails(err.Error()))
 			case errors.Is(err, service.ErrInvalidInput):
 				writeErrorResponse(w, http.StatusBadRequest, "invalid_input", extractInputErrorDetails(err.Error()))
+			case errors.Is(err, service.ErrAIUnsupported):
+				writeErrorResponse(w, http.StatusBadRequest, "ai_unsupported", "AI processing is not supported/enabled")
+			case errors.Is(err, service.ErrAI):
+				writeErrorResponse(w, http.StatusBadRequest, "ai_error", "An error occurred while processing the AI request")
 			case errors.Is(err, storage.ErrInvalidID):
 				writeErrorResponse(w, http.StatusBadRequest, "invalid_id", "The provided ID is invalid or malformed")
 			case errors.Is(err, storage.ErrNotFound):

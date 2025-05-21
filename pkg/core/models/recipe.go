@@ -20,9 +20,9 @@ type Recipe struct {
 }
 
 type Ingredient struct {
-	Name     string `bson:"name" json:"name"`
-	Quantity int    `bson:"quantity" json:"quantity"`
-	Unit     string `bson:"unit,omitempty" json:"unit,omitempty"`
+	Name     string  `bson:"name" json:"name"`
+	Quantity float32 `bson:"quantity,omitempty" json:"quantity,omitempty"`
+	Unit     string  `bson:"unit,omitempty" json:"unit,omitempty"`
 }
 
 type RecipeFilter struct {

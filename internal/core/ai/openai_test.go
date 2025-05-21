@@ -11,6 +11,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	// OpenAIModel = "gpt-4.1-mini-2025-04-14"
+	OpenAIModel = "gpt-4.1-2025-04-14"
+)
+
 func getAPIKey(t *testing.T) string {
 	apiKey := os.Getenv("OPENAI_API_KEY")
 	if apiKey == "" {
@@ -36,7 +41,7 @@ func TestNewOpenAIClient(t *testing.T) {
 			name:      "with default model",
 			apiKey:    "test-api-key",
 			model:     "",
-			wantModel: "gpt-4.1-mini-2025-04-14",
+			wantModel: OpenAIModel,
 		},
 	}
 
@@ -50,8 +55,7 @@ func TestNewOpenAIClient(t *testing.T) {
 
 func TestAnalyzeImage(t *testing.T) {
 	apiKey := getAPIKey(t)
-
-	client := NewOpenAI(apiKey, "")
+	client := NewOpenAI(apiKey, OpenAIModel)
 
 	// Get image path from environment variable or use default test image
 	imagePath := os.Getenv("TEST_IMAGE_PATH")
@@ -74,28 +78,25 @@ func TestAnalyzeImage(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	result, err := client.AnalyzeImage(ctx, base64Image, contentType, "What is this image? Keep it brief.")
+	result, err := client.AnalyzeRecipeImage(ctx, base64Image, contentType)
 	require.NoError(t, err)
 	assert.NotEmpty(t, result)
-	t.Logf("Image analysis result: %s", result)
 }
 
 func TestAnalyzeURL(t *testing.T) {
 	apiKey := getAPIKey(t)
-
-	client := NewOpenAI(apiKey, "")
+	client := NewOpenAI(apiKey, OpenAIModel)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	result, err := client.AnalyzeURL(ctx, "https://openai.com", "What is this website about? Keep it brief.")
+	result, err := client.AnalyzeRecipeURL(ctx, "https://www.ica.se/recept/klassisk-lasagne-679675/")
 	require.NoError(t, err)
 	assert.NotEmpty(t, result)
-	t.Logf("URL analysis result: %s", result)
 }
 
 func TestAnalyzeImage_InvalidAPIKey(t *testing.T) {
-	client := NewOpenAI("invalid-api-key", "")
+	client := NewOpenAI("invalid-api-key", OpenAIModel)
 
 	imageData := []byte("fake-image-data")
 	base64Image := base64.StdEncoding.EncodeToString(imageData)
@@ -103,6 +104,6 @@ func TestAnalyzeImage_InvalidAPIKey(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	_, err := client.AnalyzeImage(ctx, base64Image, ImageContentTypeJPEG, "What is this image?")
+	_, err := client.AnalyzeRecipeImage(ctx, base64Image, ImageContentTypeJPEG)
 	assert.Error(t, err)
 }

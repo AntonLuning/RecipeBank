@@ -15,8 +15,9 @@ run-core: build-core
 		RP_DB_USERNAME="mongoadmin" \
 		RP_DB_PASSWORD_FILE="$(BIN_PATH)/db_password" \
 		RP_DB_DATABASE="recipes_db" \
-		RP_OPENAI_API_KEY=$(shell cat secrets/openai_key) &&\
-	./$(BIN_PATH)/core
+		RP_AI_PROVIDER="openai" \
+		RP_AI_API_KEY=$(shell cat secrets/openai_key) &&\
+	$(BIN_PATH)/core
 
 .PHONY: build-core
 build-core:
@@ -72,6 +73,6 @@ test:
 test-ai:
 	@export \
 		OPENAI_API_KEY=$(shell cat secrets/openai_key) \
-		TEST_IMAGE_PATH="$(MAKEFILE_DIR)/testdata/test_image.jpg" &&\
+		TEST_IMAGE_PATH="$(MAKEFILE_DIR)/testdata/recipe_omelett.jpeg" &&\
 	go test ./internal/core/ai/...
 
