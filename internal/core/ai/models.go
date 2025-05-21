@@ -1,6 +1,8 @@
 package ai
 
-import "github.com/AntonLuning/RecipeBank/pkg/core/models"
+import (
+	"github.com/AntonLuning/RecipeBank/pkg/core/models"
+)
 
 // RecipeAnalysisResult represents the structured output from the AI recipe analysis
 type RecipeAnalysisResult struct {
@@ -12,26 +14,38 @@ type RecipeAnalysisResult struct {
 	Servings    int                 `json:"servings"`
 }
 
-// JSONSchema returns a JSON schema example for the RecipeAnalysisResult
-func (r *RecipeAnalysisResult) JSONSchema() string {
-	return `{
-  "title": "Spaghetti Carbonara",
-  "description": "A classic Italian pasta dish with eggs, cheese, and pancetta",
-  "ingredients": [
-    {
-      "name": "spaghetti",
-      "quantity": 500,
-      "unit": "g"
-    },
-    {
-      "name": "salt"
-    }
-  ],
-  "steps": [
-    "Boil the pasta in salted water until al dente",
-    "Fry the pancetta until crispy"
-  ],
-  "cook_time": 25,
-  "servings": 4
-}`
+// JSONSchema returns a JSON schema definition for the RecipeAnalysisResult
+func (r *RecipeAnalysisResult) JSONSchema() map[string]any {
+	return map[string]any{
+		"type": "object",
+		"properties": map[string]any{
+			"title": map[string]string{
+				"type": "string",
+			},
+			"description": map[string]string{
+				"type": "string",
+			},
+			"ingredients": map[string]any{
+				"type": "array",
+				"items": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"name":     map[string]string{"type": "string"},
+						"quantity": map[string]string{"type": "number"},
+						"unit":     map[string]string{"type": "string"},
+					},
+					"required":             []string{"name", "quantity", "unit"},
+					"additionalProperties": false,
+				},
+			},
+			"steps": map[string]any{
+				"type":  "array",
+				"items": map[string]string{"type": "string"},
+			},
+			"cook_time": map[string]string{"type": "integer"},
+			"servings":  map[string]string{"type": "integer"},
+		},
+		"required":             []string{"title", "description", "ingredients", "steps", "cook_time", "servings"},
+		"additionalProperties": false,
+	}
 }

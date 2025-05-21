@@ -19,16 +19,10 @@ const (
 const (
 	_PromptRules = `
 	1. Do NOT translate any content.
-	2. Do NOT change the text or the order of the text.
-	3. If you cannot find the information, leave the JSON field empty.
-	4. Do NOT make up any information.
-	5. If the recipe is not found, return an empty JSON object.`
+	2. Do NOT change the text or the order of the text content (e.g. ingredients, steps, etc.).
+	3. If you cannot find the information, leave the JSON field empty. I.e., if an ingredient is missing quantity or unit, set those to default values (0 or "").
+	4. Do NOT make up any information.`
 )
-
-// SchemaProvider defines an interface for types that can provide their own JSON schema
-type SchemaProvider interface {
-	JSONSchema() string
-}
 
 type OpenAI struct {
 	client openai.Client
@@ -53,16 +47,14 @@ func (c *OpenAI) AnalyzeRecipeImage(ctx context.Context, base64Image string, ima
 	dataURI := fmt.Sprintf("data:%s;base64,%s", imageContentType, base64Image)
 
 	// Create the prompt with JSON format instruction
-	prompt := fmt.Sprintf("Analyze the attached image of a recipe and extract the data. Important to follow the rules below.\n\nRules:\n%s\n\nOutput:\nProvide your response in JSON format following this structure:\n%s",
-		_PromptRules,
-		result.JSONSchema())
+	prompt := fmt.Sprintf("Analyze the attached image of a recipe and extract the data. You must follow the rules below.\n\nOutput rules:\n%s",
+		_PromptRules)
 
 	// Create the request body
 	params := openai.ChatCompletionNewParams{
 		Messages: []openai.ChatCompletionMessageParamUnion{
 			{
 				OfUser: &openai.ChatCompletionUserMessageParam{
-					Role: "user",
 					Content: openai.ChatCompletionUserMessageParamContentUnion{
 						OfArrayOfContentParts: []openai.ChatCompletionContentPartUnionParam{
 							{
@@ -84,6 +76,17 @@ func (c *OpenAI) AnalyzeRecipeImage(ctx context.Context, base64Image string, ima
 		},
 		Model:               c.model,
 		MaxCompletionTokens: openai.Int(3000),
+		Temperature:         openai.Float(0),
+		ResponseFormat: openai.ChatCompletionNewParamsResponseFormatUnion{
+			OfJSONSchema: &openai.ResponseFormatJSONSchemaParam{
+				JSONSchema: openai.ResponseFormatJSONSchemaJSONSchemaParam{
+					Name:        "recipe",
+					Strict:      openai.Opt(true),
+					Description: openai.Opt("A JSON object representing a recipe"),
+					Schema:      result.JSONSchema(),
+				},
+			},
+		},
 	}
 
 	// Call the API
@@ -104,11 +107,9 @@ func (c *OpenAI) AnalyzeRecipeImage(ctx context.Context, base64Image string, ima
 func (c *OpenAI) AnalyzeRecipeURL(ctx context.Context, url string) (*RecipeAnalysisResult, error) {
 	result := &RecipeAnalysisResult{}
 
-	// Create the prompt with JSON format instruction
-	prompt := fmt.Sprintf("Analyze the URL below that is a recipe and extract the data. Important to follow the rules below.\n\nURL: %s\n\nRules:\n%s\n\nOutput:\nProvide your response in JSON format following this structure:\n%s",
+	prompt := fmt.Sprintf("Analyze the URL including a recipe and extract the data. You must follow the rules below.\n\nURL: %s\n\nOutput rules:\n%s",
 		url,
-		_PromptRules,
-		result.JSONSchema())
+		_PromptRules)
 
 	// Create the request body
 	params := openai.ChatCompletionNewParams{
@@ -117,6 +118,17 @@ func (c *OpenAI) AnalyzeRecipeURL(ctx context.Context, url string) (*RecipeAnaly
 		},
 		Model:               c.model,
 		MaxCompletionTokens: openai.Int(3000),
+		Temperature:         openai.Float(0),
+		ResponseFormat: openai.ChatCompletionNewParamsResponseFormatUnion{
+			OfJSONSchema: &openai.ResponseFormatJSONSchemaParam{
+				JSONSchema: openai.ResponseFormatJSONSchemaJSONSchemaParam{
+					Name:        "recipe",
+					Strict:      openai.Opt(true),
+					Description: openai.Opt("A JSON object representing a recipe"),
+					Schema:      result.JSONSchema(),
+				},
+			},
+		},
 	}
 
 	// Call the API
