@@ -1,0 +1,582 @@
+basePath: /api/v1
+definitions:
+  models.APIError:
+    description: API error information
+    properties:
+      code:
+        example: validation_error
+        type: string
+      message:
+        example: The provided input data is invalid
+        type: string
+    type: object
+  models.APIResponse:
+    description: Standard API response wrapper
+    properties:
+      data: {}
+      error:
+        $ref: '#/definitions/models.APIError'
+      success:
+        example: true
+        type: boolean
+    type: object
+  models.CreateRecipeFromImageRequest:
+    description: Request for AI-powered recipe creation from image
+    properties:
+      image:
+        description: Base64 encoded image
+        example: data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ...
+        type: string
+      image_type:
+        description: '"jpeg", "jpg", "png"'
+        example: jpeg
+        type: string
+    type: object
+  models.CreateRecipeFromUrlRequest:
+    description: Request for AI-powered recipe creation from URL
+    properties:
+      url:
+        description: URL to a webpage with recipe or to an image of a recipe
+        example: https://example.com/recipe
+        type: string
+    type: object
+  models.CreateRecipeRequest:
+    description: Recipe creation/update request
+    properties:
+      cook_time:
+        example: 30
+        type: integer
+      description:
+        example: Delicious homemade chocolate chip cookies
+        type: string
+      ingredients:
+        items:
+          $ref: '#/definitions/models.Ingredient'
+        minItems: 1
+        type: array
+      servings:
+        example: 12
+        type: integer
+      steps:
+        example:
+        - '[''Preheat oven to 375°F'''
+        - ' ''Mix ingredients'''
+        - ' ''Bake for 10 minutes'']'
+        items:
+          type: string
+        minItems: 1
+        type: array
+      tags:
+        example:
+        - '[''dessert'''
+        - ' ''cookies'''
+        - ' ''baking'']'
+        items:
+          type: string
+        type: array
+      title:
+        example: Chocolate Chip Cookies
+        type: string
+    required:
+    - ingredients
+    - steps
+    - title
+    type: object
+  models.Ingredient:
+    description: Ingredient information
+    properties:
+      name:
+        example: Flour
+        type: string
+      quantity:
+        example: 2.5
+        type: number
+      unit:
+        example: cups
+        type: string
+    type: object
+  models.Recipe:
+    description: Recipe information
+    properties:
+      cook_time:
+        description: in minutes
+        example: 30
+        type: integer
+      created_at:
+        example: "2023-01-15T09:30:00Z"
+        type: string
+      description:
+        example: Delicious homemade chocolate chip cookies
+        type: string
+      id:
+        example: 507f1f77bcf86cd799439011
+        type: string
+      ingredients:
+        items:
+          $ref: '#/definitions/models.Ingredient'
+        type: array
+      servings:
+        example: 12
+        type: integer
+      steps:
+        example:
+        - '[''Preheat oven to 375°F'''
+        - ' ''Mix ingredients'''
+        - ' ''Bake for 10 minutes'']'
+        items:
+          type: string
+        type: array
+      tags:
+        example:
+        - '[''dessert'''
+        - ' ''cookies'''
+        - ' ''baking'']'
+        items:
+          type: string
+        type: array
+      title:
+        example: Chocolate Chip Cookies
+        type: string
+      updated_at:
+        example: "2023-01-15T09:30:00Z"
+        type: string
+    type: object
+  models.RecipePage:
+    description: Paginated recipe response
+    properties:
+      limit:
+        example: 10
+        type: integer
+      page:
+        example: 1
+        type: integer
+      recipes:
+        items:
+          $ref: '#/definitions/models.Recipe'
+        type: array
+      total:
+        example: 100
+        type: integer
+      total_pages:
+        example: 10
+        type: integer
+    type: object
+  models.UpdateRecipeRequest:
+    description: Recipe creation/update request
+    properties:
+      cook_time:
+        example: 30
+        type: integer
+      description:
+        example: Delicious homemade chocolate chip cookies
+        type: string
+      ingredients:
+        items:
+          $ref: '#/definitions/models.Ingredient'
+        minItems: 1
+        type: array
+      servings:
+        example: 12
+        type: integer
+      steps:
+        example:
+        - '[''Preheat oven to 375°F'''
+        - ' ''Mix ingredients'''
+        - ' ''Bake for 10 minutes'']'
+        items:
+          type: string
+        minItems: 1
+        type: array
+      tags:
+        example:
+        - '[''dessert'''
+        - ' ''cookies'''
+        - ' ''baking'']'
+        items:
+          type: string
+        type: array
+      title:
+        example: Chocolate Chip Cookies
+        type: string
+    required:
+    - ingredients
+    - steps
+    - title
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@recipebank.example.com
+    name: API Support
+    url: http://www.recipebank.example.com/support
+  description: A recipe management API with AI-powered features
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: RecipeBank API
+  version: "1.0"
+paths:
+  /recipe:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of recipes with optional filtering
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Number of items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Filter by recipe title
+        in: query
+        name: title
+        type: string
+      - description: Filter by maximum cook time in minutes
+        in: query
+        name: cook_time
+        type: integer
+      - description: Filter by ingredient names (comma-separated)
+        in: query
+        name: ingredients
+        type: string
+      - description: Filter by tags (comma-separated)
+        in: query
+        name: tags
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful response
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.RecipePage'
+              type: object
+        "400":
+          description: Invalid query parameters
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.APIResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/models.APIError'
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.APIResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/models.APIError'
+              type: object
+      summary: Get all recipes
+      tags:
+      - recipes
+    post:
+      consumes:
+      - application/json
+      description: Create a new recipe with the provided information
+      parameters:
+      - description: Recipe information
+        in: body
+        name: recipe
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateRecipeRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Recipe created successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Recipe'
+              type: object
+        "400":
+          description: Invalid input data
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.APIResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/models.APIError'
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.APIResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/models.APIError'
+              type: object
+      summary: Create a new recipe
+      tags:
+      - recipes
+  /recipe/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a recipe by its ID
+      parameters:
+      - description: Recipe ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Recipe deleted successfully
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "400":
+          description: Invalid recipe ID
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.APIResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/models.APIError'
+              type: object
+        "404":
+          description: Recipe not found
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.APIResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/models.APIError'
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.APIResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/models.APIError'
+              type: object
+      summary: Delete a recipe
+      tags:
+      - recipes
+    get:
+      consumes:
+      - application/json
+      description: Get a specific recipe by its ID
+      parameters:
+      - description: Recipe ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful response
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Recipe'
+              type: object
+        "400":
+          description: Invalid recipe ID
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.APIResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/models.APIError'
+              type: object
+        "404":
+          description: Recipe not found
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.APIResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/models.APIError'
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.APIResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/models.APIError'
+              type: object
+      summary: Get recipe by ID
+      tags:
+      - recipes
+    put:
+      consumes:
+      - application/json
+      description: Update an existing recipe with the provided information
+      parameters:
+      - description: Recipe ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated recipe information
+        in: body
+        name: recipe
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateRecipeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Recipe updated successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Recipe'
+              type: object
+        "400":
+          description: Invalid input data or recipe ID
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.APIResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/models.APIError'
+              type: object
+        "404":
+          description: Recipe not found
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.APIResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/models.APIError'
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.APIResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/models.APIError'
+              type: object
+      summary: Update a recipe
+      tags:
+      - recipes
+  /recipe/ai/from-image:
+    post:
+      consumes:
+      - application/json
+      description: Create a new recipe by analyzing an image using AI
+      parameters:
+      - description: Image data and type
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateRecipeFromImageRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Recipe created successfully from image
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Recipe'
+              type: object
+        "400":
+          description: Invalid input data or AI processing error
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.APIResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/models.APIError'
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.APIResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/models.APIError'
+              type: object
+      summary: Create recipe from image using AI
+      tags:
+      - ai-recipes
+  /recipe/ai/from-url:
+    post:
+      consumes:
+      - application/json
+      description: Create a new recipe by analyzing content from a URL using AI
+      parameters:
+      - description: URL to analyze
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateRecipeFromUrlRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Recipe created successfully from URL
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Recipe'
+              type: object
+        "400":
+          description: Invalid input data or AI processing error
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.APIResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/models.APIError'
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.APIResponse'
+            - properties:
+                error:
+                  $ref: '#/definitions/models.APIError'
+              type: object
+      summary: Create recipe from URL using AI
+      tags:
+      - ai-recipes
+produces:
+- application/json
+schemes:
+- http
+- https
+swagger: "2.0"

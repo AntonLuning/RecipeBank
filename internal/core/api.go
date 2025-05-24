@@ -14,6 +14,9 @@ import (
 	"github.com/AntonLuning/RecipeBank/internal/core/service"
 	"github.com/AntonLuning/RecipeBank/internal/core/storage"
 	"github.com/AntonLuning/RecipeBank/pkg/core/models"
+	httpSwagger "github.com/swaggo/http-swagger"
+
+	_ "github.com/AntonLuning/RecipeBank/docs" // Import generated swagger docs
 )
 
 type apiFunc func(context.Context, http.ResponseWriter, *http.Request) error
@@ -32,6 +35,11 @@ func NewAPIServer(addr string, service service.Service) *APIServer {
 
 	mux := http.NewServeMux()
 	mux.Handle("/api/v1/", http.StripPrefix("/api/v1", server.v1Mux()))
+
+	// Swagger documentation route
+	mux.HandleFunc("/", httpSwagger.WrapHandler)
+	mux.HandleFunc("/docs", httpSwagger.WrapHandler)
+
 	server.mux = mux
 
 	return &server
@@ -59,6 +67,22 @@ func (s *APIServer) v1Mux() http.Handler {
 	return v1Mux
 }
 
+// GetRecipes godoc
+// @Summary Get all recipes
+// @Description Get a paginated list of recipes with optional filtering
+// @Tags recipes
+// @Accept json
+// @Produce json
+// @Param page query int false "Page number" default(1)
+// @Param limit query int false "Number of items per page" default(10)
+// @Param title query string false "Filter by recipe title"
+// @Param cook_time query int false "Filter by maximum cook time in minutes"
+// @Param ingredients query string false "Filter by ingredient names (comma-separated)"
+// @Param tags query string false "Filter by tags (comma-separated)"
+// @Success 200 {object} models.APIResponse{data=models.RecipePage} "Successful response"
+// @Failure 400 {object} models.APIResponse{error=models.APIError} "Invalid query parameters"
+// @Failure 500 {object} models.APIResponse{error=models.APIError} "Internal server error"
+// @Router /recipe [get]
 func (s *APIServer) handleGetRecipes(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var query models.GetRecipesQuery
 	if err := s.parseQueryParams(r, &query); err != nil {
@@ -73,6 +97,18 @@ func (s *APIServer) handleGetRecipes(ctx context.Context, w http.ResponseWriter,
 	return writeSuccessResponse(w, http.StatusOK, recipes)
 }
 
+// GetRecipeByID godoc
+// @Summary Get recipe by ID
+// @Description Get a specific recipe by its ID
+// @Tags recipes
+// @Accept json
+// @Produce json
+// @Param id path string true "Recipe ID"
+// @Success 200 {object} models.APIResponse{data=models.Recipe} "Successful response"
+// @Failure 400 {object} models.APIResponse{error=models.APIError} "Invalid recipe ID"
+// @Failure 404 {object} models.APIResponse{error=models.APIError} "Recipe not found"
+// @Failure 500 {object} models.APIResponse{error=models.APIError} "Internal server error"
+// @Router /recipe/{id} [get]
 func (s *APIServer) handleGetRecipeByID(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	id := r.PathValue("id")
 	if id == "" {
@@ -87,6 +123,17 @@ func (s *APIServer) handleGetRecipeByID(ctx context.Context, w http.ResponseWrit
 	return writeSuccessResponse(w, http.StatusOK, recipe)
 }
 
+// PostRecipe godoc
+// @Summary Create a new recipe
+// @Description Create a new recipe with the provided information
+// @Tags recipes
+// @Accept json
+// @Produce json
+// @Param recipe body models.CreateRecipeRequest true "Recipe information"
+// @Success 201 {object} models.APIResponse{data=models.Recipe} "Recipe created successfully"
+// @Failure 400 {object} models.APIResponse{error=models.APIError} "Invalid input data"
+// @Failure 500 {object} models.APIResponse{error=models.APIError} "Internal server error"
+// @Router /recipe [post]
 func (s *APIServer) handlePostRecipe(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var req models.CreateRecipeRequest
 	if err := s.parseJSONBody(w, r, &req); err != nil {
@@ -103,6 +150,19 @@ func (s *APIServer) handlePostRecipe(ctx context.Context, w http.ResponseWriter,
 	return writeSuccessResponse(w, http.StatusCreated, createdRecipe)
 }
 
+// PutRecipe godoc
+// @Summary Update a recipe
+// @Description Update an existing recipe with the provided information
+// @Tags recipes
+// @Accept json
+// @Produce json
+// @Param id path string true "Recipe ID"
+// @Param recipe body models.UpdateRecipeRequest true "Updated recipe information"
+// @Success 200 {object} models.APIResponse{data=models.Recipe} "Recipe updated successfully"
+// @Failure 400 {object} models.APIResponse{error=models.APIError} "Invalid input data or recipe ID"
+// @Failure 404 {object} models.APIResponse{error=models.APIError} "Recipe not found"
+// @Failure 500 {object} models.APIResponse{error=models.APIError} "Internal server error"
+// @Router /recipe/{id} [put]
 func (s *APIServer) handlePutRecipe(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	id := r.PathValue("id")
 	if id == "" {
@@ -124,6 +184,18 @@ func (s *APIServer) handlePutRecipe(ctx context.Context, w http.ResponseWriter, 
 	return writeSuccessResponse(w, http.StatusOK, updatedRecipe)
 }
 
+// DeleteRecipe godoc
+// @Summary Delete a recipe
+// @Description Delete a recipe by its ID
+// @Tags recipes
+// @Accept json
+// @Produce json
+// @Param id path string true "Recipe ID"
+// @Success 204 {object} models.APIResponse "Recipe deleted successfully"
+// @Failure 400 {object} models.APIResponse{error=models.APIError} "Invalid recipe ID"
+// @Failure 404 {object} models.APIResponse{error=models.APIError} "Recipe not found"
+// @Failure 500 {object} models.APIResponse{error=models.APIError} "Internal server error"
+// @Router /recipe/{id} [delete]
 func (s *APIServer) handleDeleteRecipe(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	id := r.PathValue("id")
 	if id == "" {
@@ -137,6 +209,17 @@ func (s *APIServer) handleDeleteRecipe(ctx context.Context, w http.ResponseWrite
 	return writeSuccessResponse(w, http.StatusNoContent, nil)
 }
 
+// PostRecipeFromImage godoc
+// @Summary Create recipe from image using AI
+// @Description Create a new recipe by analyzing an image using AI
+// @Tags ai-recipes
+// @Accept json
+// @Produce json
+// @Param request body models.CreateRecipeFromImageRequest true "Image data and type"
+// @Success 201 {object} models.APIResponse{data=models.Recipe} "Recipe created successfully from image"
+// @Failure 400 {object} models.APIResponse{error=models.APIError} "Invalid input data or AI processing error"
+// @Failure 500 {object} models.APIResponse{error=models.APIError} "Internal server error"
+// @Router /recipe/ai/from-image [post]
 func (s *APIServer) handlePostRecipeFromImage(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var req models.CreateRecipeFromImageRequest
 	if err := s.parseJSONBody(w, r, &req); err != nil {
@@ -151,6 +234,17 @@ func (s *APIServer) handlePostRecipeFromImage(ctx context.Context, w http.Respon
 	return writeSuccessResponse(w, http.StatusCreated, recipe)
 }
 
+// PostRecipeFromURL godoc
+// @Summary Create recipe from URL using AI
+// @Description Create a new recipe by analyzing content from a URL using AI
+// @Tags ai-recipes
+// @Accept json
+// @Produce json
+// @Param request body models.CreateRecipeFromUrlRequest true "URL to analyze"
+// @Success 201 {object} models.APIResponse{data=models.Recipe} "Recipe created successfully from URL"
+// @Failure 400 {object} models.APIResponse{error=models.APIError} "Invalid input data or AI processing error"
+// @Failure 500 {object} models.APIResponse{error=models.APIError} "Internal server error"
+// @Router /recipe/ai/from-url [post]
 func (s *APIServer) handlePostRecipeFromURL(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var req models.CreateRecipeFromUrlRequest
 	if err := s.parseJSONBody(w, r, &req); err != nil {

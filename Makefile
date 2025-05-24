@@ -76,3 +76,6 @@ test-ai:
 		TEST_IMAGE_PATH="$(MAKEFILE_DIR)/testdata/recipe_omelett.jpeg" &&\
 	go test ./internal/core/ai/...
 
+.PHONY: swagger-docs
+swagger-docs:
+	@swag init -g internal/core/docs.go -o docs/
