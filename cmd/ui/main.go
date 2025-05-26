@@ -13,7 +13,7 @@ func main() {
 	// Initialize Server
 	mux := http.NewServeMux()
 	ui.InitAssets(mux, cfg.AssetsPath, cfg.Debug)
-	ui.InitRoutes(mux)
+	ui.InitRoutes(mux, cfg.ApiURL)
 
 	// Start the server
 	if err := http.ListenAndServe(cfg.AppAddress(), mux); err != nil {

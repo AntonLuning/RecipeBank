@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/caarlos0/env/v11"
 )
@@ -19,6 +20,8 @@ type AppConfig struct {
 	Port uint16 `env:"PORT" envDefault:"9999"`
 	// Path of static assets
 	AssetsPath string `env:"ASSETS_PATH,required"`
+	// API URL
+	ApiURL string `env:"API_URL,required"`
 }
 
 func Config() AppConfig {
@@ -33,6 +36,9 @@ func Config() AppConfig {
 	config := AppConfig{}
 	if err := env.ParseWithOptions(&config, opts); err != nil {
 		panic(err.Error())
+	}
+	if strings.HasSuffix(config.ApiURL, "/") {
+		config.ApiURL = config.ApiURL[:len(config.ApiURL)-1]
 	}
 	instance = &config
 

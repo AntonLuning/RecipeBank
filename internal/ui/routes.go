@@ -12,8 +12,8 @@ func InitAssets(m *http.ServeMux, assetsPath string, isDebug bool) {
 	m.Handle("GET /favicon.ico", serveFavicon(assetsPath))
 }
 
-func InitRoutes(m *http.ServeMux) {
-	m.HandleFunc("GET /", handlers.GetIndexPage)
+func InitRoutes(m *http.ServeMux, apiURL string) {
+	m.HandleFunc("GET /", handlers.GetIndexPage(apiURL))
 }
 
 func serveFavicon(assetsPath string) http.Handler {
