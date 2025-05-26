@@ -546,3 +546,164 @@ func TestCreateRecipeWithSpecialCharacters(t *testing.T) {
 	assert.NotNil(t, createdRecipe)
 	mockStorage.AssertExpectations(t)
 }
+
+// TestCreateRecipeWithImage tests creating recipes with image validation
+func TestCreateRecipeWithImage(t *testing.T) {
+	mockStorage := new(MockStorage)
+	recipeService := NewRecipeService(mockStorage, nil)
+
+	ctx := context.Background()
+
+	// Valid JPEG base64 data (1x1 pixel JPEG)
+	validJPEGBase64 := "/9j/4AAQSkZJRgABAQEASABIAAD/2Q=="
+
+	// Valid PNG base64 data (1x1 pixel PNG)
+	validPNGBase64 := "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChAI9DeAQu3QAAAABJRU5ErkJggg="
+
+	t.Run("Success with JPEG image", func(t *testing.T) {
+		recipe := &models.Recipe{
+			Title:       "Test Recipe with JPEG",
+			Description: "Test Description",
+			Ingredients: []models.Ingredient{
+				{Name: "Test Ingredient", Quantity: 1, Unit: "cup"},
+			},
+			Steps:    []string{"Step 1", "Step 2"},
+			CookTime: 30,
+			Servings: 4,
+			Image:    validJPEGBase64,
+		}
+
+		expectedRecipe := &models.Recipe{
+			ID:          primitive.NewObjectID(),
+			Title:       recipe.Title,
+			Description: recipe.Description,
+			Ingredients: recipe.Ingredients,
+			Steps:       recipe.Steps,
+			CookTime:    recipe.CookTime,
+			Servings:    recipe.Servings,
+			Image:       recipe.Image,
+		}
+
+		mockStorage.On("CreateRecipe", ctx, mock.AnythingOfType("*models.Recipe")).Return(expectedRecipe, nil).Once()
+
+		createdRecipe, err := recipeService.CreateRecipe(ctx, recipe)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, createdRecipe)
+		assert.Equal(t, validJPEGBase64, createdRecipe.Image)
+		mockStorage.AssertExpectations(t)
+	})
+
+	t.Run("Success with PNG image", func(t *testing.T) {
+		recipe := &models.Recipe{
+			Title:       "Test Recipe with PNG",
+			Description: "Test Description",
+			Ingredients: []models.Ingredient{
+				{Name: "Test Ingredient", Quantity: 1, Unit: "cup"},
+			},
+			Steps:    []string{"Step 1", "Step 2"},
+			CookTime: 30,
+			Servings: 4,
+			Image:    validPNGBase64,
+		}
+
+		expectedRecipe := &models.Recipe{
+			ID:          primitive.NewObjectID(),
+			Title:       recipe.Title,
+			Description: recipe.Description,
+			Ingredients: recipe.Ingredients,
+			Steps:       recipe.Steps,
+			CookTime:    recipe.CookTime,
+			Servings:    recipe.Servings,
+			Image:       recipe.Image,
+		}
+
+		mockStorage.On("CreateRecipe", ctx, mock.AnythingOfType("*models.Recipe")).Return(expectedRecipe, nil).Once()
+
+		createdRecipe, err := recipeService.CreateRecipe(ctx, recipe)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, createdRecipe)
+		assert.Equal(t, validPNGBase64, createdRecipe.Image)
+		mockStorage.AssertExpectations(t)
+	})
+
+	t.Run("Success without image", func(t *testing.T) {
+		recipe := &models.Recipe{
+			Title:       "Test Recipe without Image",
+			Description: "Test Description",
+			Ingredients: []models.Ingredient{
+				{Name: "Test Ingredient", Quantity: 1, Unit: "cup"},
+			},
+			Steps:    []string{"Step 1", "Step 2"},
+			CookTime: 30,
+			Servings: 4,
+			Image:    "", // Empty image is valid
+		}
+
+		expectedRecipe := &models.Recipe{
+			ID:          primitive.NewObjectID(),
+			Title:       recipe.Title,
+			Description: recipe.Description,
+			Ingredients: recipe.Ingredients,
+			Steps:       recipe.Steps,
+			CookTime:    recipe.CookTime,
+			Servings:    recipe.Servings,
+			Image:       "",
+		}
+
+		mockStorage.On("CreateRecipe", ctx, mock.AnythingOfType("*models.Recipe")).Return(expectedRecipe, nil).Once()
+
+		createdRecipe, err := recipeService.CreateRecipe(ctx, recipe)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, createdRecipe)
+		assert.Equal(t, "", createdRecipe.Image)
+		mockStorage.AssertExpectations(t)
+	})
+
+	t.Run("Error with invalid base64", func(t *testing.T) {
+		recipe := &models.Recipe{
+			Title:       "Test Recipe",
+			Description: "Test Description",
+			Ingredients: []models.Ingredient{
+				{Name: "Test Ingredient", Quantity: 1, Unit: "cup"},
+			},
+			Steps:    []string{"Step 1", "Step 2"},
+			CookTime: 30,
+			Servings: 4,
+			Image:    "invalid-base64!@#$%",
+		}
+
+		createdRecipe, err := recipeService.CreateRecipe(ctx, recipe)
+
+		assert.Error(t, err)
+		assert.Nil(t, createdRecipe)
+		assert.Contains(t, err.Error(), "invalid image")
+		assert.ErrorIs(t, errors.Unwrap(err), ErrValidation)
+	})
+
+	t.Run("Error with unsupported image format", func(t *testing.T) {
+		// This is a valid base64 but not a valid image format (text data)
+		invalidImageBase64 := "VGhpcyBpcyBub3QgYW4gaW1hZ2U="
+
+		recipe := &models.Recipe{
+			Title:       "Test Recipe",
+			Description: "Test Description",
+			Ingredients: []models.Ingredient{
+				{Name: "Test Ingredient", Quantity: 1, Unit: "cup"},
+			},
+			Steps:    []string{"Step 1", "Step 2"},
+			CookTime: 30,
+			Servings: 4,
+			Image:    invalidImageBase64,
+		}
+
+		createdRecipe, err := recipeService.CreateRecipe(ctx, recipe)
+
+		assert.Error(t, err)
+		assert.Nil(t, createdRecipe)
+		assert.Contains(t, err.Error(), "invalid image")
+		assert.ErrorIs(t, errors.Unwrap(err), ErrValidation)
+	})
+}

@@ -67,3 +67,29 @@ func validateBase64Image(image string, imageType string) error {
 
 	return fmt.Errorf("unrecognized/unsupported image format")
 }
+
+func detectImageTypeFromBase64(image string) (string, error) {
+	if image == "" {
+		return "", nil // Empty image is valid (optional field)
+	}
+
+	// Decode base64
+	data, err := base64.StdEncoding.DecodeString(image)
+	if err != nil {
+		return "", fmt.Errorf("invalid base64 encoding: %w", err)
+	}
+
+	// Check if it's an image by looking at file signatures
+	if len(data) < 4 {
+		return "", fmt.Errorf("data too short to be a valid image")
+	}
+
+	// Check common image format signatures
+	if bytes.HasPrefix(data, []byte{0xFF, 0xD8, 0xFF}) {
+		return "jpeg", nil
+	} else if bytes.HasPrefix(data, []byte{0x89, 0x50, 0x4E, 0x47}) {
+		return "png", nil
+	}
+
+	return "", fmt.Errorf("unrecognized/unsupported image format (only JPEG and PNG are supported)")
+}

@@ -177,6 +177,17 @@ func validateRecipe(recipe *models.Recipe) error {
 		return fmt.Errorf("servings must be positive")
 	}
 
+	// Validate optional image field
+	if recipe.Image != "" {
+		imageType, err := detectImageTypeFromBase64(recipe.Image)
+		if err != nil {
+			return fmt.Errorf("invalid image: %w", err)
+		}
+		if imageType == "" {
+			return fmt.Errorf("image type could not be determined")
+		}
+	}
+
 	return nil
 }
 

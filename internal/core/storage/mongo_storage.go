@@ -227,6 +227,7 @@ func (s *MongoStorage) UpdateRecipe(ctx context.Context, id string, recipe *mode
 				"cook_time":   recipe.CookTime,
 				"servings":    recipe.Servings,
 				"tags":        recipe.Tags,
+				"image":       recipe.Image,
 				"updated_at":  recipe.UpdatedAt,
 			},
 		},

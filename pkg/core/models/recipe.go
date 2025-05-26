@@ -17,6 +17,7 @@ type Recipe struct {
 	CookTime    int                `bson:"cook_time" json:"cook_time,omitempty" example:"30"` // in minutes
 	Servings    int                `bson:"servings" json:"servings,omitempty" example:"12"`
 	Tags        []string           `bson:"tags" json:"tags,omitempty" example:"['dessert', 'cookies', 'baking']"`
+	Image       string             `bson:"image,omitempty" json:"image,omitempty" example:"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ..."` // Base64 encoded image
 	CreatedAt   time.Time          `bson:"created_at" json:"created_at" example:"2023-01-15T09:30:00Z"`
 	UpdatedAt   time.Time          `bson:"updated_at" json:"updated_at" example:"2023-01-15T09:30:00Z"`
 }

@@ -5,23 +5,11 @@ import "github.com/swaggo/swag"
 
 const docTemplate = `{
     "schemes": {{ marshal .Schemes }},
-    "produces": [
-        "application/json"
-    ],
     "swagger": "2.0",
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "termsOfService": "http://swagger.io/terms/",
-        "contact": {
-            "name": "API Support",
-            "url": "http://www.recipebank.example.com/support",
-            "email": "support@recipebank.example.com"
-        },
-        "license": {
-            "name": "MIT",
-            "url": "https://opensource.org/licenses/MIT"
-        },
+        "contact": {},
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
@@ -743,6 +731,11 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Delicious homemade chocolate chip cookies"
                 },
+                "image": {
+                    "description": "Base64 encoded image (optional)",
+                    "type": "string",
+                    "example": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ..."
+                },
                 "ingredients": {
                     "type": "array",
                     "minItems": 1,
@@ -821,6 +814,11 @@ const docTemplate = `{
                 "id": {
                     "type": "string",
                     "example": "507f1f77bcf86cd799439011"
+                },
+                "image": {
+                    "description": "Base64 encoded image",
+                    "type": "string",
+                    "example": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ..."
                 },
                 "ingredients": {
                     "type": "array",
@@ -909,6 +907,11 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Delicious homemade chocolate chip cookies"
                 },
+                "image": {
+                    "description": "Base64 encoded image (optional)",
+                    "type": "string",
+                    "example": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ..."
+                },
                 "ingredients": {
                     "type": "array",
                     "minItems": 1,
@@ -954,12 +957,12 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "1.0",
-	Host:             "localhost:8080",
-	BasePath:         "/api/v1",
-	Schemes:          []string{"http", "https"},
-	Title:            "RecipeBank API",
-	Description:      "A recipe management API with AI-powered features",
+	Version:          "",
+	Host:             "",
+	BasePath:         "",
+	Schemes:          []string{},
+	Title:            "",
+	Description:      "",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

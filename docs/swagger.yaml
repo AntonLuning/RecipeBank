@@ -1,4 +1,3 @@
-basePath: /api/v1
 definitions:
   models.APIError:
     description: API error information
@@ -48,6 +47,10 @@ definitions:
         type: integer
       description:
         example: Delicious homemade chocolate chip cookies
+        type: string
+      image:
+        description: Base64 encoded image (optional)
+        example: data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ...
         type: string
       ingredients:
         items:
@@ -111,6 +114,10 @@ definitions:
       id:
         example: 507f1f77bcf86cd799439011
         type: string
+      image:
+        description: Base64 encoded image
+        example: data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ...
+        type: string
       ingredients:
         items:
           $ref: '#/definitions/models.Ingredient'
@@ -170,6 +177,10 @@ definitions:
       description:
         example: Delicious homemade chocolate chip cookies
         type: string
+      image:
+        description: Base64 encoded image (optional)
+        example: data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ...
+        type: string
       ingredients:
         items:
           $ref: '#/definitions/models.Ingredient'
@@ -203,19 +214,8 @@ definitions:
     - steps
     - title
     type: object
-host: localhost:8080
 info:
-  contact:
-    email: support@recipebank.example.com
-    name: API Support
-    url: http://www.recipebank.example.com/support
-  description: A recipe management API with AI-powered features
-  license:
-    name: MIT
-    url: https://opensource.org/licenses/MIT
-  termsOfService: http://swagger.io/terms/
-  title: RecipeBank API
-  version: "1.0"
+  contact: {}
 paths:
   /recipe:
     get:
@@ -574,9 +574,4 @@ paths:
       summary: Create recipe from URL using AI
       tags:
       - ai-recipes
-produces:
-- application/json
-schemes:
-- http
-- https
 swagger: "2.0"

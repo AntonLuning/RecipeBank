@@ -715,3 +715,58 @@ func TestGetRecipesWithComplexFilter(t *testing.T) {
 		})
 	}
 }
+
+func TestUpdateRecipeWithImage(t *testing.T) {
+	storage, cleanup := createTestStorage(t)
+	defer cleanup()
+
+	initTime := time.Now()
+
+	// Create initial recipe with image
+	recipe := &models.Recipe{
+		Title:       "Original Recipe",
+		Description: "Original Description",
+		Ingredients: []models.Ingredient{
+			{Name: "ingredient1", Quantity: 1, Unit: "cup"},
+		},
+		Steps:     []string{"step1"},
+		CookTime:  30,
+		Servings:  4,
+		Tags:      []string{"test"},
+		Image:     "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2Q==",
+		CreatedAt: initTime,
+		UpdatedAt: initTime,
+	}
+
+	created, err := storage.CreateRecipe(context.Background(), recipe)
+	require.NoError(t, err)
+
+	// Update recipe with new image
+	updateRecipe := &models.Recipe{
+		ID:          created.ID,
+		Title:       "Updated Recipe",
+		Description: "Updated Description",
+		Ingredients: []models.Ingredient{
+			{Name: "ingredient2", Quantity: 2, Unit: "tbsp"},
+		},
+		Steps:     []string{"updated step"},
+		CookTime:  45,
+		Servings:  6,
+		Tags:      []string{"updated"},
+		Image:     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChAI9DeAQu3QAAAABJRU5ErkJggg=",
+		UpdatedAt: time.Now(),
+	}
+
+	result, err := storage.UpdateRecipe(context.Background(), created.ID.Hex(), updateRecipe)
+	require.NoError(t, err)
+
+	// Verify the image was updated
+	assert.Equal(t, updateRecipe.Image, result.Image)
+	assert.Equal(t, updateRecipe.Title, result.Title)
+	assert.Equal(t, updateRecipe.Description, result.Description)
+
+	// Verify by retrieving the recipe from storage
+	retrieved, err := storage.GetRecipeByID(context.Background(), created.ID.Hex())
+	require.NoError(t, err)
+	assert.Equal(t, updateRecipe.Image, retrieved.Image)
+}

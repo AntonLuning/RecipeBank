@@ -326,6 +326,7 @@ func createRecipeFromRequest(req models.RecipeRequest) *models.Recipe {
 		CookTime:    req.CookTime,
 		Servings:    req.Servings,
 		Tags:        req.Tags,
+		Image:       req.Image,
 	}
 }
 

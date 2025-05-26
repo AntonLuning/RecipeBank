@@ -20,6 +20,7 @@ type RecipeRequest struct {
 	CookTime    int          `json:"cook_time" example:"30"`
 	Servings    int          `json:"servings" example:"12"`
 	Tags        []string     `json:"tags" example:"['dessert', 'cookies', 'baking']"`
+	Image       string       `json:"image,omitempty" example:"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ..."` // Base64 encoded image (optional)
 }
 
 // Alias the RecipeRequest for better semantics
