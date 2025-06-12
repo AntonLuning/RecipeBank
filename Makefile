@@ -24,12 +24,13 @@ build-core:
 	@go build -o $(BIN_PATH)/core cmd/core/main.go
 
 .PHONY: run-ui
-run-ui: setup-ui-assets build-ui
+run-ui: build-ui
 	@mkdir -p $(BIN_PATH)
 	@export \
 		RP_UI_DEBUG="true" \
-		RP_UI_ASSETS_PATH="$(ASSETS_PATH)" &&\
-	./$(BIN_PATH)/ui
+		RP_UI_ASSETS_PATH="$(ASSETS_PATH)" \
+		RP_UI_API_URL="http://localhost:9876/api/v1" &&\
+	$(BIN_PATH)/ui
 
 .PHONY: build-ui
 build-ui:
@@ -47,23 +48,6 @@ mongo-start:
 mongo-stop:
 	@docker stop mongodb-recipebank
 	@docker rm mongodb-recipebank
-
-.PHONY: setup-ui-assets
-setup-ui-assets: compile_tailwind generate_templ
-	@mkdir -p $(ASSETS_PATH)/js
-	@find $(MAKEFILE_DIR)/3rd -type f \( -name "*.js" \) | \
-	while IFS= read -r file; do \
-		cp "$$file" $(ASSETS_PATH)/js/; \
-	done
-	@mkdir -p $(ASSETS_PATH)/img
-
-.PHONY: compile_tailwind
-compile_tailwind:
-	@cd $(MAKEFILE_DIR)/tailwind && npx tailwindcss -i $(MAKEFILE_DIR)/internal/ui/views/static/css/input.css -o $(ASSETS_PATH)/css/output.css
-
-.PHONY: generate_templ
-generate_templ:
-	@templ generate -path $(MAKEFILE_DIR)/internal/ui/views/
 
 .PHONY: test
 test:

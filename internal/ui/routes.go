@@ -2,18 +2,17 @@ package ui
 
 import (
 	"net/http"
-
-	"github.com/AntonLuning/RecipeBank/internal/ui/handlers"
 )
 
 func InitAssets(m *http.ServeMux, assetsPath string, isDebug bool) {
 	fs := http.FileServer(http.Dir(assetsPath))
-	m.Handle("GET /assets/", disableCacheInDevMode(http.StripPrefix("/assets/", fs), isDebug))
 	m.Handle("GET /favicon.ico", serveFavicon(assetsPath))
+	m.Handle("GET /assets/", disableCacheInDevMode(http.StripPrefix("/assets/", fs), isDebug))
 }
 
 func InitRoutes(m *http.ServeMux, apiURL string) {
-	m.HandleFunc("GET /", handlers.GetIndexPage(apiURL))
+	// m.HandleFunc("GET /", handlers.GetIndexPage(apiURL)) // Page with all recipes
+	// m.HandleFunc("GET /recipe/{id}", handlers.GetRecipePage(apiURL)) // Page with a single recipe
 }
 
 func serveFavicon(assetsPath string) http.Handler {
