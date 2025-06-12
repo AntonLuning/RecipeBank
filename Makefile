@@ -33,8 +33,16 @@ run-ui: build-ui
 	$(BIN_PATH)/ui
 
 .PHONY: build-ui
-build-ui:
+build-ui: generate-templ generate-assets
 	@go build -o $(BIN_PATH)/ui cmd/ui/main.go
+
+.PHONY: generate-templ
+generate-templ:
+	@templ generate
+
+.PHONY: generate-assets
+generate-assets:
+	@npx tailwindcss -i ./assets/css/input.css -o $(ASSETS_PATH)/css/output.css --content "./internal/ui/**/*.{templ,go}" --content "./internal/ui/components/**/*.{templ,go}"
 
 .PHONY: mongo-start
 mongo-start:

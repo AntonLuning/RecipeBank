@@ -37,9 +37,8 @@ func Config() AppConfig {
 	if err := env.ParseWithOptions(&config, opts); err != nil {
 		panic(err.Error())
 	}
-	if strings.HasSuffix(config.ApiURL, "/") {
-		config.ApiURL = config.ApiURL[:len(config.ApiURL)-1]
-	}
+	config.ApiURL = strings.TrimSuffix(config.ApiURL, "/")
+
 	instance = &config
 
 	return *instance

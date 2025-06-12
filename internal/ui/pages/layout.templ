@@ -1,0 +1,19 @@
+package pages
+
+// BaseLayout provides the common HTML structure for all pages
+templ BaseLayout(title string) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="UTF-8">
+			<meta name="viewport" content="width=device-width, initial-scale=1.0">
+			<title>{ title }</title>
+			<link rel="stylesheet" href="/assets/css/output.css">
+		</head>
+		<body class="bg-background text-foreground min-h-screen">
+			<div class="container mx-auto px-4 py-8">
+				{ children... }
+			</div>
+		</body>
+	</html>
+} 

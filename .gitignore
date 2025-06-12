@@ -2,4 +2,4 @@
 /bin
 /secrets
 
-/tailwind/node_modules
+**/node_modules
