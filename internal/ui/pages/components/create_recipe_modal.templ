@@ -1,0 +1,177 @@
+package components
+
+import (
+	"github.com/AntonLuning/RecipeBank/internal/ui/components/accordion"
+	"github.com/AntonLuning/RecipeBank/internal/ui/components/button"
+	"github.com/AntonLuning/RecipeBank/internal/ui/components/input"
+	"github.com/AntonLuning/RecipeBank/internal/ui/components/modal"
+)
+
+// CreateRecipeModal renders the modal for creating new recipes
+templ CreateRecipeModal() {
+	@modal.Modal(modal.Props{
+		ID: "create-recipe-modal",
+		Class: "max-w-lg mx-auto transition-all duration-200 ease-in-out",
+		Attributes: templ.Attributes{
+			"style": "align-items: flex-start; padding-top: 4rem;",
+		},
+	}) {
+		@modal.Header(modal.HeaderProps{Class: "relative border-b pb-4"}) {
+			<div class="flex items-center justify-between">
+				<div>
+					<h3 class="text-xl font-semibold text-foreground">Create New Recipe</h3>
+					<p class="text-sm text-muted-foreground mt-1">Choose how you'd like to create your recipe</p>
+				</div>
+			</div>
+		}
+		@modal.Body(modal.BodyProps{Class: "py-4"}) {
+			@accordion.Accordion() {
+				@createManualRecipe()
+				@createRecipeFromURL()
+				@createRecipeFromImage()
+			}
+		}
+		@modal.Footer(modal.FooterProps{Class: "border-t pt-4 flex justify-end"}) {
+			@modal.Close(modal.CloseProps{ModalID: "create-recipe-modal"}) {
+				@button.Button(button.Props{
+					Variant: button.VariantSecondary,
+					Class: "px-6",
+				}) {
+					Cancel
+				}
+			}
+		}
+	}
+}
+
+// ManualCreationItem renders the manual recipe creation accordion item
+templ createManualRecipe() {
+	@accordion.Item() {
+		@accordion.Trigger() {
+			<div class="flex items-center space-x-3">
+				<div class="p-2 bg-primary/10 rounded-lg">
+					<svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+					</svg>
+				</div>
+				<div>
+					<h4 class="font-semibold text-foreground">Create Manually</h4>
+				</div>
+			</div>
+		}
+		@accordion.Content() {
+			<div class="space-y-4">
+				<p class="text-sm text-muted-foreground">Enter recipe details step by step using our form</p>
+				@button.Button(button.Props{
+					Class: "w-full",
+					Href: "/recipe/create",
+				}) {
+					Create Recipe
+				}
+			</div>
+		}
+	}
+}
+
+// URLCreationItem renders the URL-based recipe creation accordion item
+templ createRecipeFromURL() {
+	@accordion.Item() {
+		@accordion.Trigger() {
+			<div class="flex items-center space-x-3">
+				<div class="p-2 bg-blue-500/10 rounded-lg">
+					<svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+					</svg>
+				</div>
+				<div>
+					<h4 class="font-semibold text-foreground">Create from URL</h4>
+				</div>
+			</div>
+		}
+		@accordion.Content() {
+			<div class="space-y-4" x-data="{ recipeUrl: '', isValidUrl: false }">
+				<p class="text-sm text-muted-foreground">Import recipe from a website automatically</p>
+				<div>
+					@input.Input(input.Props{
+						Type: input.TypeURL, 
+						Placeholder: "https://example.com/recipe",
+						Class: "mb-3",
+						Attributes: templ.Attributes{
+							"x-model": "recipeUrl",
+							"@input": "isValidUrl = $event.target.checkValidity() && recipeUrl.length > 0",
+						},
+					})
+					@button.Button(button.Props{
+						Class: "w-full transition-all duration-200",
+						Attributes: templ.Attributes{
+							":disabled": "!isValidUrl",
+							":class": "isValidUrl ? 'opacity-100' : 'opacity-50 cursor-not-allowed'",
+						},
+					}) {
+						Create Recipe
+					}
+				</div>
+			</div>
+		}
+	}
+}
+
+// ImageCreationItem renders the image-based recipe creation accordion item
+templ createRecipeFromImage() {
+	@accordion.Item() {
+		@accordion.Trigger() {
+			<div class="flex items-center space-x-3">
+				<div class="p-2 bg-green-500/10 rounded-lg">
+					<svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+					</svg>
+				</div>
+				<div>
+					<h4 class="font-semibold text-foreground">Create from Image</h4>
+				</div>
+			</div>
+		}
+		@accordion.Content() {
+			<div class="space-y-4">
+				<p class="text-sm text-muted-foreground">Upload a photo and let AI extract the recipe</p>
+				<div x-data="{ fileName: '', hasFile: false }">
+					<label 
+						class="relative block border-2 border-dashed rounded-lg p-4 hover:border-primary/50 hover:bg-accent/25 transition-all duration-200 cursor-pointer group mb-3"
+						:class="hasFile ? 'border-primary/50 bg-accent/25' : 'border-muted-foreground/25'"
+					>
+						<div class="flex items-center justify-center space-x-2 pointer-events-none" :class="hasFile ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'">
+							<svg x-show="!hasFile" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+							</svg>
+							<svg x-show="hasFile" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: none;">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+							</svg>
+							<span class="text-sm font-medium" x-text="hasFile ? fileName : 'Click to upload image'">Click to upload image</span>
+						</div>
+						<p 
+							class="text-xs text-muted-foreground text-center mt-1 pointer-events-none"
+							x-text="hasFile ? 'Click to change file' : 'JPEG/JPG/PNG files only'"
+						></p>
+						@input.Input(input.Props{
+							Type: input.TypeFile, 
+							FileAccept: "image/jpeg,image/png", 
+							Class: "absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10",
+							Attributes: templ.Attributes{
+								"@change": "if ($event.target.files.length > 0) { fileName = $event.target.files[0].name; hasFile = true; } else { fileName = ''; hasFile = false; }",
+							},
+						})
+					</label>
+					@button.Button(button.Props{
+						Class: "w-full transition-all duration-200",
+						Attributes: templ.Attributes{
+							":disabled": "!hasFile",
+							":class": "hasFile ? 'opacity-100' : 'opacity-50 cursor-not-allowed'",
+						},
+					}) {
+						Create Recipe
+					}
+				</div>
+			</div>
+		}
+	}
+} 

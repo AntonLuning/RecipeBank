@@ -13,8 +13,8 @@ func InitAssets(m *http.ServeMux, assetsPath string, isDebug bool) {
 }
 
 func InitRoutes(m *http.ServeMux, apiURL string) {
-	m.HandleFunc("GET /", handlers.GetIndexPage(apiURL)) // Page with all recipes
-	// m.HandleFunc("GET /recipe/{id}", handlers.GetRecipePage(apiURL)) // Page with a single recipe
+	m.HandleFunc("GET /", handlers.GetIndexPage(apiURL))             // Page with all recipes
+	m.HandleFunc("GET /recipe/{id}", handlers.GetRecipePage(apiURL)) // Page with a single recipe
 }
 
 func serveFavicon(assetsPath string) http.Handler {

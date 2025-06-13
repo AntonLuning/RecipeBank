@@ -10,7 +10,6 @@ import (
 	"github.com/AntonLuning/RecipeBank/pkg/models"
 )
 
-// GetIndexPage handles GET / - displays the main recipe grid page
 func GetIndexPage(apiURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -37,6 +36,9 @@ func GetIndexPage(apiURL string) http.HandlerFunc {
 		if title := r.URL.Query().Get("title"); title != "" {
 			apiReqURL += "&title=" + title
 		}
+		if ingredientNames := r.URL.Query().Get("ingredient_names"); ingredientNames != "" {
+			apiReqURL += "&ingredient_names=" + ingredientNames
+		}
 		if cookTime := r.URL.Query().Get("cook_time"); cookTime != "" {
 			apiReqURL += "&cook_time=" + cookTime
 		}
@@ -48,8 +50,7 @@ func GetIndexPage(apiURL string) http.HandlerFunc {
 		recipePage, err := fetchRecipesFromAPI(apiReqURL)
 		if err != nil {
 			// Handle error - render page with error state
-			component := pages.IndexPage(pages.IndexPageData{
-				Recipes:     nil,
+			component := pages.RecipesOverviewPage(pages.RecipesPageData{
 				RecipePage:  nil,
 				Error:       err.Error(),
 				SearchQuery: r.URL.Query(),
@@ -61,7 +62,7 @@ func GetIndexPage(apiURL string) http.HandlerFunc {
 		}
 
 		// Render page with recipes
-		component := pages.IndexPage(pages.IndexPageData{
+		component := pages.RecipesOverviewPage(pages.RecipesPageData{
 			RecipePage:  recipePage,
 			Error:       "",
 			SearchQuery: r.URL.Query(),

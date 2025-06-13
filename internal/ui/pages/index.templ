@@ -2,50 +2,65 @@ package pages
 
 import (
 	"github.com/AntonLuning/RecipeBank/pkg/models"
-	"github.com/AntonLuning/RecipeBank/internal/ui/components/card"
-	"github.com/AntonLuning/RecipeBank/internal/ui/components/pagination"
 	"github.com/AntonLuning/RecipeBank/internal/ui/components/button"
+	"github.com/AntonLuning/RecipeBank/internal/ui/components/card"
+	"github.com/AntonLuning/RecipeBank/internal/ui/pages/components"
+	"github.com/AntonLuning/RecipeBank/internal/ui/components/modal"
+	"github.com/AntonLuning/RecipeBank/internal/ui/components/pagination"
 )
 
-// IndexPageData contains all data needed for the index page template
-type IndexPageData struct {
+type RecipesPageData struct {
 	RecipePage  *models.RecipePage
 	Error       string
 	SearchQuery map[string][]string
 }
 
-// IndexPage is the main templ component for the recipe index page
-templ IndexPage(data IndexPageData) {
+templ RecipesOverviewPage(data RecipesPageData) {
 	@BaseLayout("Recipe Bank - All Recipes") {
-		@RecipeHeader()
-		@RecipeFilters(data.SearchQuery)
+		@recipeOverviewHeader()
+		@recipeFilters(data.SearchQuery)
 		if data.Error != "" {
-			@ErrorState(data.Error)
+			@errorState(data.Error)
 		} else {
-			@RecipeGrid(data.RecipePage.Recipes)
+			@recipeGrid(data.RecipePage.Recipes)
 			if data.RecipePage != nil && data.RecipePage.TotalPages > 1 {
-				@RecipePagination(data.RecipePage)
+				@recipePagination(data.RecipePage)
 			}
 		}
+		@components.CreateRecipeModal()
 	}
 }
 
-// RecipeHeader renders the page header section
-templ RecipeHeader() {
+templ recipeOverviewHeader() {
 	<div class="mb-8">
-		<h1 class="text-4xl font-bold text-foreground mb-2">Recipe Collection</h1>
-		<p class="text-muted-foreground">Discover and explore our delicious recipes</p>
+		<div class="flex justify-between items-center">
+			<div>
+				<h1 class="text-4xl font-bold text-foreground mb-2">Recipe Collection</h1>
+				<p class="text-muted-foreground">Discover and explore our delicious recipes</p>
+			</div>
+			<div>
+				@modal.Trigger(modal.TriggerProps{ModalID: "create-recipe-modal"}) {
+					@button.Button(button.Props{
+						Class: "bg-primary text-primary-foreground hover:bg-primary/90",
+					}) {
+						<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+						</svg>
+						New Recipe
+					}
+				}
+			</div>
+		</div>
 	</div>
 }
 
-// RecipeFilters renders the search and filter section
-templ RecipeFilters(searchQuery map[string][]string) {
+templ recipeFilters(searchQuery map[string][]string) {
 	@card.Card(card.Props{Class: "mb-8"}) {
 		@card.Content() {
 			<form method="GET" action="/">
-				<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
 					<div>
-						<label for="title" class="block text-sm font-medium text-foreground mb-2">Search Recipes</label>
+						<label for="title" class="block text-sm font-medium text-foreground mb-2">Recipe Title</label>
 						<input 
 							id="title"
 							name="title"
@@ -56,13 +71,25 @@ templ RecipeFilters(searchQuery map[string][]string) {
 						>
 					</div>
 					<div>
-						<label for="cook_time" class="block text-sm font-medium text-foreground mb-2">Max Cook Time (min)</label>
+						<label for="ingredient_names" class="block text-sm font-medium text-foreground mb-2">Ingredients</label>
+						<input 
+							id="ingredient_names"
+							name="ingredient_names"
+							type="text" 
+							value={ getQueryValue(searchQuery, "ingredient_names") }
+							placeholder="e.g. flour,sugar,eggs"
+							class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+						>
+					</div>
+					<div>
+						<label for="cook_time" class="block text-sm font-medium text-foreground mb-2">Cook Time (min)</label>
 						<input 
 							id="cook_time"
 							name="cook_time"
 							type="number" 
 							value={ getQueryValue(searchQuery, "cook_time") }
 							placeholder="e.g. 30"
+							min="1"
 							class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
 						>
 					</div>
@@ -73,7 +100,7 @@ templ RecipeFilters(searchQuery map[string][]string) {
 							name="tags"
 							type="text" 
 							value={ getQueryValue(searchQuery, "tags") }
-							placeholder="e.g. dessert,cookies"
+							placeholder="e.g. dessert,quick,vegetarian"
 							class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
 						>
 					</div>
@@ -91,8 +118,7 @@ templ RecipeFilters(searchQuery map[string][]string) {
 	}
 }
 
-// RecipeGrid renders the main recipe grid with cards
-templ RecipeGrid(recipes []models.Recipe) {
+templ recipeGrid(recipes []models.Recipe) {
 	<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
 		if len(recipes) == 0 {
 			<div class="col-span-full text-center py-8">
@@ -105,14 +131,13 @@ templ RecipeGrid(recipes []models.Recipe) {
 			</div>
 		} else {
 			for _, recipe := range recipes {
-				@RecipeCard(recipe)
+				@recipeCard(recipe)
 			}
 		}
 	</div>
 }
 
-// RecipeCard renders a single recipe card using templUI Card component
-templ RecipeCard(recipe models.Recipe) {
+templ recipeCard(recipe models.Recipe) {
 	@card.Card(card.Props{Class: "hover:shadow-lg transition-shadow duration-300"}) {
 		<div class="aspect-w-16 aspect-h-9">
 			<img 
@@ -177,8 +202,7 @@ templ RecipeCard(recipe models.Recipe) {
 	}
 }
 
-// ErrorState renders an error message
-templ ErrorState(errorMsg string) {
+templ errorState(errorMsg string) {
 	@card.Card(card.Props{Class: "text-center py-8"}) {
 		@card.Content() {
 			<div class="text-destructive mb-4">
@@ -194,8 +218,7 @@ templ ErrorState(errorMsg string) {
 	}
 }
 
-// RecipePagination renders pagination controls using templUI Pagination component
-templ RecipePagination(recipePage *models.RecipePage) {
+templ recipePagination(recipePage *models.RecipePage) {
 	@pagination.Pagination(pagination.Props{Class: "mt-8"}) {
 		@pagination.Content() {
 			if recipePage.Page > 1 {

@@ -1,0 +1,181 @@
+package pages
+
+import (
+	"github.com/AntonLuning/RecipeBank/pkg/models"
+	"github.com/AntonLuning/RecipeBank/internal/ui/components/card"
+	"github.com/AntonLuning/RecipeBank/internal/ui/components/button"
+)
+
+type RecipePageData struct {
+	Recipe *models.Recipe
+	Error  string
+}
+
+templ RecipePage(data RecipePageData) {
+	@BaseLayout("Recipe Bank - " + getRecipeTitle(data.Recipe)) {
+		if data.Error != "" {
+			@recipeErrorState(data.Error)
+		} else {
+			@recipeDetail(data.Recipe)
+		}
+	}
+}
+
+templ recipeDetail(recipe *models.Recipe) {
+	<div class="max-w-4xl mx-auto">
+		<!-- Header section with title and back button -->
+		<div class="mb-6">
+			@button.Button(button.Props{
+				Href: "/",
+				Class: "mb-4",
+				Variant: "outline",
+			}) {
+				← Back to Recipes
+			}
+			<h1 class="text-4xl font-bold text-foreground mb-2">{ recipe.Title }</h1>
+			if recipe.Description != "" {
+				<p class="text-lg text-muted-foreground">{ recipe.Description }</p>
+			}
+		</div>
+
+		<!-- Recipe info and image -->
+		<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+			<!-- Image -->
+			<div>
+				@card.Card(card.Props{}) {
+					<div class="aspect-w-16 aspect-h-12">
+						<img 
+							src={ getRecipeImageSrc(recipe.Image) }
+							alt={ recipe.Title }
+							class="w-full h-80 object-cover rounded-lg"
+							onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDQwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xNjggMTUwQzE2OCAxMzMuNDMxIDE4MS40MzEgMTIwIDE5OCAxMjBDMjE0LjU2OSAxMjAgMjI4IDEzMy40MzEgMjI4IDE1MEMyMjggMTY2LjU2OSAyMTQuNTY5IDE4MCAyMTQgMTgwQzE4MS40MzEgMTgwIDE2OCAxNjYuNTY5IDE2OCAxNTBaIiBmaWxsPSIjOUNBM0FGIi8+CjxwYXRoIGQ9Ik0xMzYgMjAwTDE2OC42ODYzIDE2Ny4zMTRDMTc0LjkzNSAxNjEuMDY1IDE4NS4wNjUgMTYxLjA2NSAxOTEuMzE0IDE2Ny4zMTRMMjY0IDIwMEgxMzZaIiBmaWxsPSIjOUNBM0FGIi8+Cjwvc3ZnPg=='"
+						>
+					</div>
+				}
+			</div>
+
+			<!-- Recipe Info -->
+			<div>
+				@card.Card(card.Props{}) {
+					@card.Header() {
+						@card.Title() {
+							Recipe Information
+						}
+					}
+					@card.Content() {
+						<div class="space-y-4">
+							if recipe.CookTime > 0 {
+								<div class="flex items-center">
+									<svg class="w-5 h-5 mr-3 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+									</svg>
+									<span class="text-sm font-medium">Cook Time:</span>
+									<span class="ml-2 text-foreground">{ formatCookTime(recipe.CookTime) }</span>
+								</div>
+							}
+							if recipe.Servings > 0 {
+								<div class="flex items-center">
+									<svg class="w-5 h-5 mr-3 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+									</svg>
+									<span class="text-sm font-medium">Servings:</span>
+									<span class="ml-2 text-foreground">{ formatServings(recipe.Servings) }</span>
+								</div>
+							}
+							if len(recipe.Tags) > 0 {
+								<div>
+									<span class="text-sm font-medium mb-2 block">Tags:</span>
+									<div class="flex flex-wrap gap-2">
+										for _, tag := range recipe.Tags {
+											<span class="px-3 py-1 bg-secondary text-secondary-foreground text-sm rounded-full">{ tag }</span>
+										}
+									</div>
+								</div>
+							}
+						</div>
+					}
+				}
+			</div>
+		</div>
+
+		<!-- Ingredients and Steps -->
+		<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+			<!-- Ingredients -->
+			<div>
+				@card.Card(card.Props{}) {
+					@card.Header() {
+						@card.Title() {
+							Ingredients
+						}
+					}
+					@card.Content() {
+						if len(recipe.Ingredients) > 0 {
+							<ul class="space-y-2">
+								for _, ingredient := range recipe.Ingredients {
+									<li class="flex items-center">
+										<span class="w-2 h-2 bg-primary rounded-full mr-3 flex-shrink-0"></span>
+										<span class="text-foreground">{ formatIngredient(ingredient) }</span>
+									</li>
+								}
+							</ul>
+						} else {
+							<p class="text-muted-foreground">No ingredients listed.</p>
+						}
+					}
+				}
+			</div>
+
+			<!-- Instructions -->
+			<div>
+				@card.Card(card.Props{}) {
+					@card.Header() {
+						@card.Title() {
+							Instructions
+						}
+					}
+					@card.Content() {
+						if len(recipe.Steps) > 0 {
+							<ol class="space-y-4">
+								for i, step := range recipe.Steps {
+									<li class="flex">
+										<span class="flex-shrink-0 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium mr-3 mt-0.5">
+											{ formatStepNumber(i + 1) }
+										</span>
+										<span class="text-foreground">{ step }</span>
+									</li>
+								}
+							</ol>
+						} else {
+							<p class="text-muted-foreground">No instructions provided.</p>
+						}
+					}
+				}
+			</div>
+		</div>
+	</div>
+}
+
+templ recipeErrorState(errorMsg string) {
+	<div class="max-w-2xl mx-auto">
+		@button.Button(button.Props{
+			Href: "/",
+			Class: "mb-4",
+			Variant: "outline",
+		}) {
+			← Back to Recipes
+		}
+		@card.Card(card.Props{Class: "text-center py-8"}) {
+			@card.Content() {
+				<div class="text-destructive mb-4">
+					<svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+					</svg>
+				</div>
+				<p class="text-muted-foreground mb-4">{ errorMsg }</p>
+				@button.Button(button.Props{Href: "/"}) {
+					Go Back to Recipes
+				}
+			}
+		}
+	</div>
+} 
