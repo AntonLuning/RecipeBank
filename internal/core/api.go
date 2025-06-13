@@ -36,9 +36,11 @@ func NewAPIServer(addr string, service service.Service) *APIServer {
 	mux := http.NewServeMux()
 	mux.Handle("/api/v1/", http.StripPrefix("/api/v1", server.v1Mux()))
 
-	// Swagger documentation route
-	mux.HandleFunc("/", httpSwagger.WrapHandler)
-	mux.HandleFunc("/docs", httpSwagger.WrapHandler)
+	// API (Swagger) documentation routes
+	mux.Handle("/docs/", httpSwagger.WrapHandler)
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/docs/", http.StatusMovedPermanently)
+	})
 
 	server.mux = mux
 
