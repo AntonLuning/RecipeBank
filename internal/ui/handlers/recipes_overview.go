@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -10,7 +9,7 @@ import (
 	"github.com/AntonLuning/RecipeBank/pkg/models"
 )
 
-func GetIndexPage(apiURL string) http.HandlerFunc {
+func GetRecipesOverviewPage(apiURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
@@ -29,25 +28,25 @@ func GetIndexPage(apiURL string) http.HandlerFunc {
 			}
 		}
 
-		// Build API request URL with query parameters
-		apiReqURL := fmt.Sprintf("%s/recipe?page=%d&limit=%d", apiURL, page, limit)
+		// Build API endpoint with query parameters
+		apiEndpoint := fmt.Sprintf("/recipe?page=%d&limit=%d", page, limit)
 
 		// Add search filters if provided
 		if title := r.URL.Query().Get("title"); title != "" {
-			apiReqURL += "&title=" + title
+			apiEndpoint += "&title=" + title
 		}
 		if ingredientNames := r.URL.Query().Get("ingredient_names"); ingredientNames != "" {
-			apiReqURL += "&ingredient_names=" + ingredientNames
+			apiEndpoint += "&ingredient_names=" + ingredientNames
 		}
 		if cookTime := r.URL.Query().Get("cook_time"); cookTime != "" {
-			apiReqURL += "&cook_time=" + cookTime
+			apiEndpoint += "&cook_time=" + cookTime
 		}
 		if tags := r.URL.Query().Get("tags"); tags != "" {
-			apiReqURL += "&tags=" + tags
+			apiEndpoint += "&tags=" + tags
 		}
 
 		// Fetch recipes from API
-		recipePage, err := fetchRecipesFromAPI(apiReqURL)
+		recipePage, err := fetchRecipesFromAPI(apiURL, apiEndpoint)
 		if err != nil {
 			// Handle error - render page with error state
 			component := pages.RecipesOverviewPage(pages.RecipesPageData{
@@ -74,47 +73,10 @@ func GetIndexPage(apiURL string) http.HandlerFunc {
 	}
 }
 
-// fetchRecipesFromAPI fetches recipes from the API backend
-func fetchRecipesFromAPI(apiURL string) (*models.RecipePage, error) {
-	resp, err := http.Get(apiURL)
+func fetchRecipesFromAPI(apiBaseURL string, apiEndpoint string) (*models.RecipePage, error) {
+	recipePage, err := fetchFromAPI[models.RecipePage](apiBaseURL, apiEndpoint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch recipes: %w", err)
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("API returned status %d", resp.StatusCode)
-	}
-
-	var apiResponse models.APIResponse
-	if err := json.NewDecoder(resp.Body).Decode(&apiResponse); err != nil {
-		return nil, fmt.Errorf("failed to decode API response: %w", err)
-	}
-
-	if !apiResponse.Success {
-		errorMsg := "API request failed"
-		if apiResponse.Error != nil {
-			errorMsg = apiResponse.Error.Message
-		}
-		return nil, fmt.Errorf(errorMsg)
-	}
-
-	// The API response data should be a RecipePage
-	recipePageData, ok := apiResponse.Data.(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("unexpected API response format")
-	}
-
-	// Convert the map back to RecipePage struct
-	recipePageJSON, err := json.Marshal(recipePageData)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal recipe page data: %w", err)
-	}
-
-	var recipePage models.RecipePage
-	if err := json.Unmarshal(recipePageJSON, &recipePage); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal recipe page: %w", err)
-	}
-
-	return &recipePage, nil
+	return recipePage, nil
 }

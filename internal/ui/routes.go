@@ -13,8 +13,12 @@ func InitAssets(m *http.ServeMux, assetsPath string, isDebug bool) {
 }
 
 func InitRoutes(m *http.ServeMux, apiURL string) {
-	m.HandleFunc("GET /", handlers.GetIndexPage(apiURL))             // Page with all recipes
-	m.HandleFunc("GET /recipe/{id}", handlers.GetRecipePage(apiURL)) // Page with a single recipe
+	m.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/recipe", http.StatusMovedPermanently) // TODO: Temporary until we have a proper home page
+	})
+
+	m.HandleFunc("GET /recipe", handlers.GetRecipesOverviewPage(apiURL)) // Recipes overview page
+	m.HandleFunc("GET /recipe/{id}", handlers.GetRecipePage(apiURL))     // Recipe detail page
 }
 
 func serveFavicon(assetsPath string) http.Handler {

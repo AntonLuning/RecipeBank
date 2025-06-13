@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -20,11 +19,8 @@ func GetRecipePage(apiURL string) http.HandlerFunc {
 			return
 		}
 
-		// Build API request URL
-		apiReqURL := fmt.Sprintf("%s/recipe/%s", apiURL, recipeID)
-
 		// Fetch recipe from API
-		recipe, err := fetchRecipeFromAPI(apiReqURL)
+		recipe, err := fetchRecipeFromAPI(apiURL, "/recipe", recipeID)
 		if err != nil {
 			// Handle error - render page with error state
 			component := pages.RecipePage(pages.RecipePageData{
@@ -49,51 +45,15 @@ func GetRecipePage(apiURL string) http.HandlerFunc {
 	}
 }
 
-// fetchRecipeFromAPI fetches a single recipe from the API backend
-func fetchRecipeFromAPI(apiURL string) (*models.Recipe, error) {
-	resp, err := http.Get(apiURL)
+func fetchRecipeFromAPI(apiBaseURL string, apiEndpoint string, recipeID string) (*models.Recipe, error) {
+	apiEndpointWithID := fmt.Sprintf("%s/%s", apiEndpoint, recipeID)
+	recipe, err := fetchFromAPI[models.Recipe](apiBaseURL, apiEndpointWithID)
 	if err != nil {
+		// Convert generic "resource not found" to more specific "recipe not found"
+		if err.Error() == "resource not found" {
+			return nil, fmt.Errorf("recipe not found")
+		}
 		return nil, fmt.Errorf("failed to fetch recipe: %w", err)
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode == http.StatusNotFound {
-		return nil, fmt.Errorf("recipe not found")
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("API returned status %d", resp.StatusCode)
-	}
-
-	var apiResponse models.APIResponse
-	if err := json.NewDecoder(resp.Body).Decode(&apiResponse); err != nil {
-		return nil, fmt.Errorf("failed to decode API response: %w", err)
-	}
-
-	if !apiResponse.Success {
-		errorMsg := "API request failed"
-		if apiResponse.Error != nil {
-			errorMsg = apiResponse.Error.Message
-		}
-		return nil, fmt.Errorf(errorMsg)
-	}
-
-	// The API response data should be a Recipe
-	recipeData, ok := apiResponse.Data.(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("unexpected API response format")
-	}
-
-	// Convert the map back to Recipe struct
-	recipeJSON, err := json.Marshal(recipeData)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal recipe data: %w", err)
-	}
-
-	var recipe models.Recipe
-	if err := json.Unmarshal(recipeJSON, &recipe); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal recipe: %w", err)
-	}
-
-	return &recipe, nil
+	return recipe, nil
 }

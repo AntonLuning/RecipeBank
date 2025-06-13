@@ -138,68 +138,80 @@ templ recipeGrid(recipes []models.Recipe) {
 }
 
 templ recipeCard(recipe models.Recipe) {
-	@card.Card(card.Props{Class: "hover:shadow-lg transition-shadow duration-300"}) {
-		<div class="aspect-w-16 aspect-h-9">
-			<img 
-				src={ getRecipeImageSrc(recipe.Image) }
-				alt={ recipe.Title }
-				class="w-full h-48 object-cover rounded-t-lg"
-				loading="lazy"
-				onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDIwMCAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTkyIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik04NCA5NkM4NCA4Ny4xNjM0IDkxLjE2MzQgODAgMTAwIDgwQzEwOC44MzcgODAgMTE2IDg3LjE2MzQgMTE2IDk2QzExNiAxMDQuODM3IDEwOC44MzcgMTEyIDEwMCAxMTJDOTEuMTYzNCAxMTIgODQgMTA0LjgzNyA4NCA5NloiIGZpbGw9IiM5Q0EzQUYiLz4KPHBhdGggZD0iTTY4IDEyOEw4NC4zNDMxIDExMS42NTdDODcuNDY3MyAxMDguNTMzIDkyLjUzMjcgMTA4LjUzMyA5NS42NTY5IDExMS42NTdMMTMyIDEyOEg2OFoiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+'"
-			>
-		</div>
-		@card.Header() {
-			@card.Title() {
-				{ recipe.Title }
-			}
-			@card.Description() {
-				{ recipe.Description }
-			}
-		}
-		@card.Content(card.ContentProps{Class: "pt-0"}) {
-			<div class="flex items-center justify-between text-xs text-muted-foreground mb-3">
-				if recipe.CookTime > 0 {
-					<span class="flex items-center">
-						<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-						</svg>
-						{ formatCookTime(recipe.CookTime) }
-					</span>
-				}
-				if recipe.Servings > 0 {
-					<span class="flex items-center">
-						<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-						</svg>
-						{ formatServings(recipe.Servings) }
-					</span>
-				}
+	<a href={ templ.URL("/recipe/" + recipe.ID.Hex()) } class="block">
+		@card.Card(card.Props{Class: "hover:shadow-lg transition-shadow duration-300 cursor-pointer"}) {
+			<div class="aspect-w-16 aspect-h-9">
+				<img 
+					src={ getRecipeImageSrc(recipe.Image) }
+					alt={ recipe.Title }
+					class="w-full h-48 object-cover rounded-t-lg"
+					loading="lazy"
+					onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDIwMCAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTkyIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik04NCA5NkM4NCA4Ny4xNjM0IDkxLjE2MzQgODAgMTAwIDgwQzEwOC44MzcgODAgMTE2IDg3LjE2MzQgMTE2IDk2QzExNiAxMDQuODM3IDEwOC44MzcgMTEyIDEwMCAxMTJDOTEuMTYzNCAxMTIgODQgMTA0LjgzNyA4NCA5NloiIGZpbGw9IiM5Q0EzQUYiLz4KPHBhdGggZD0iTTY4IDEyOEw4NC4zNDMxIDExMS42NTdDODcuNDY3MyAxMDguNTMzIDkyLjUzMjcgMTA4LjUzMyA5NS42NTY5IDExMS42NTdMMTMyIDEyOEg2OFoiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+'"
+				>
 			</div>
-			
-			if len(recipe.Tags) > 0 {
-				<div class="flex flex-wrap gap-1 mb-3">
-					for i, tag := range recipe.Tags {
-						if i < 3 {
-							<span class="px-2 py-1 bg-secondary text-secondary-foreground text-xs rounded-full">{ tag }</span>
+			@card.Header() {
+				@card.Title() {
+					{ recipe.Title }
+				}
+				@card.Description() {
+					<div class="h-[2.5rem] flex items-start overflow-hidden">
+						if recipe.Description != "" {
+							<p class="text-sm line-clamp-2 leading-tight">{ recipe.Description }</p>
+						} else {
+							<span class="text-muted-foreground italic text-sm">No description available</span>
 						}
-					}
-					if len(recipe.Tags) > 3 {
-						<span class="px-2 py-1 bg-muted text-muted-foreground text-xs rounded-full">
-							+{ formatExtraTags(len(recipe.Tags) - 3) }
-						</span>
+					</div>
+				}
+			}
+			@card.Content(card.ContentProps{Class: "pt-0"}) {
+				<div class="flex items-center justify-between text-xs text-muted-foreground mb-3 min-h-[1.25rem]">
+					<span class="flex items-center">
+						if recipe.CookTime > 0 {
+							<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+							</svg>
+							{ formatCookTime(recipe.CookTime) }
+						} else {
+							<svg class="w-4 h-4 mr-1 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+							</svg>
+							<span class="opacity-50">No time</span>
+						}
+					</span>
+					<span class="flex items-center">
+						if recipe.Servings > 0 {
+							<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+							</svg>
+							{ formatServings(recipe.Servings) }
+						} else {
+							<svg class="w-4 h-4 mr-1 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+							</svg>
+							<span class="opacity-50">No servings</span>
+						}
+					</span>
+				</div>
+
+				<div class="flex flex-nowrap gap-1 mb-3 min-h-[1.75rem] overflow-hidden">
+					if len(recipe.Tags) > 0 {
+						for i, tag := range recipe.Tags {
+							if i < 3 {
+								<span class="px-2 py-1 bg-secondary text-secondary-foreground text-xs rounded-full flex-shrink-0 max-w-[6rem] truncate inline-block" title={ tag }>{ tag }</span>
+							}
+						}
+						if len(recipe.Tags) > 3 {
+							<span class="px-2 py-1 bg-muted text-muted-foreground text-xs rounded-full flex-shrink-0">
+								+{ formatExtraTags(len(recipe.Tags) - 3) }
+							</span>
+						}
+					} else {
+						<span class="px-2 py-1 bg-muted text-muted-foreground text-xs rounded-full opacity-50 flex-shrink-0">No tags</span>
 					}
 				</div>
 			}
 		}
-		@card.Footer() {
-			@button.Button(button.Props{
-				Href: "/recipe/" + recipe.ID.Hex(),
-				Class: "w-full",
-			}) {
-				View Recipe
-			}
-		}
-	}
+	</a>
 }
 
 templ errorState(errorMsg string) {
