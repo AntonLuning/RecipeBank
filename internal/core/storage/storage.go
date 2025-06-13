@@ -3,7 +3,7 @@ package storage
 import (
 	"context"
 
-	"github.com/AntonLuning/RecipeBank/pkg/core/models"
+	"github.com/AntonLuning/RecipeBank/pkg/models"
 )
 
 // RecipeStorage defines the interface for recipe storage operations

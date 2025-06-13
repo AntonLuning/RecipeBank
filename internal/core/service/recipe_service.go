@@ -7,7 +7,7 @@ import (
 
 	"github.com/AntonLuning/RecipeBank/internal/core/ai"
 	"github.com/AntonLuning/RecipeBank/internal/core/storage"
-	"github.com/AntonLuning/RecipeBank/pkg/core/models"
+	"github.com/AntonLuning/RecipeBank/pkg/models"
 )
 
 type RecipeService struct {

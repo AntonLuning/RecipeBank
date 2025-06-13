@@ -6,7 +6,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// Recipe represents a recipe in the system
 // @Description Recipe information
 type Recipe struct {
 	ID          primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty" example:"507f1f77bcf86cd799439011"`
@@ -22,7 +21,6 @@ type Recipe struct {
 	UpdatedAt   time.Time          `bson:"updated_at" json:"updated_at" example:"2023-01-15T09:30:00Z"`
 }
 
-// Ingredient represents an ingredient in a recipe
 // @Description Ingredient information
 type Ingredient struct {
 	Name     string  `bson:"name" json:"name" example:"Flour"`
@@ -30,7 +28,6 @@ type Ingredient struct {
 	Unit     string  `bson:"unit,omitempty" json:"unit,omitempty" example:"cups"`
 }
 
-// RecipeFilter represents filters for searching recipes
 // @Description Filter criteria for searching recipes
 type RecipeFilter struct {
 	Title           string   `json:"title,omitempty" example:"Chocolate"`
@@ -39,7 +36,6 @@ type RecipeFilter struct {
 	Tags            []string `json:"tags,omitempty" example:"['dessert', 'quick']"`
 }
 
-// RecipePage represents a paginated response of recipes
 // @Description Paginated recipe response
 type RecipePage struct {
 	Recipes    []Recipe `json:"recipes"`

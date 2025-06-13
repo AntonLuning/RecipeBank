@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/AntonLuning/RecipeBank/pkg/core/models"
+	"github.com/AntonLuning/RecipeBank/pkg/models"
 )
 
 type Service interface {

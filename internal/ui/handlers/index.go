@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/AntonLuning/RecipeBank/internal/ui/pages"
-	"github.com/AntonLuning/RecipeBank/pkg/core/models"
+	"github.com/AntonLuning/RecipeBank/pkg/models"
 )
 
 // GetIndexPage handles GET / - displays the main recipe grid page

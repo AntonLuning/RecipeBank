@@ -12,7 +12,7 @@ import (
 	"github.com/AntonLuning/RecipeBank/internal/ui/components/button"
 	"github.com/AntonLuning/RecipeBank/internal/ui/components/card"
 	"github.com/AntonLuning/RecipeBank/internal/ui/components/pagination"
-	"github.com/AntonLuning/RecipeBank/pkg/core/models"
+	"github.com/AntonLuning/RecipeBank/pkg/models"
 )
 
 // IndexPageData contains all data needed for the index page template

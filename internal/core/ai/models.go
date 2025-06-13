@@ -1,7 +1,7 @@
 package ai
 
 import (
-	"github.com/AntonLuning/RecipeBank/pkg/core/models"
+	"github.com/AntonLuning/RecipeBank/pkg/models"
 )
 
 // RecipeAnalysisResult represents the structured output from the AI recipe analysis

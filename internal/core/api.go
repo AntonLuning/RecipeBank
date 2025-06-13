@@ -13,7 +13,7 @@ import (
 
 	"github.com/AntonLuning/RecipeBank/internal/core/service"
 	"github.com/AntonLuning/RecipeBank/internal/core/storage"
-	"github.com/AntonLuning/RecipeBank/pkg/core/models"
+	"github.com/AntonLuning/RecipeBank/pkg/models"
 	httpSwagger "github.com/swaggo/http-swagger"
 
 	_ "github.com/AntonLuning/RecipeBank/docs" // Import generated swagger docs

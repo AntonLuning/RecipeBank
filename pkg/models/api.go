@@ -2,7 +2,6 @@ package models
 
 // Request models
 
-// GetRecipesQuery represents query parameters for getting recipes
 // @Description Query parameters for recipe search
 type GetRecipesQuery struct {
 	Page   int          `json:"page,omitempty" example:"1"`
@@ -10,7 +9,6 @@ type GetRecipesQuery struct {
 	Filter RecipeFilter `json:"filter,omitempty"`
 }
 
-// RecipeRequest represents the request body for creating/updating recipes
 // @Description Recipe creation/update request
 type RecipeRequest struct {
 	Title       string       `json:"title" validate:"required" example:"Chocolate Chip Cookies"`
@@ -20,21 +18,19 @@ type RecipeRequest struct {
 	CookTime    int          `json:"cook_time" example:"30"`
 	Servings    int          `json:"servings" example:"12"`
 	Tags        []string     `json:"tags" example:"['dessert', 'cookies', 'baking']"`
-	Image       string       `json:"image,omitempty" example:"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ..."` // Base64 encoded image (optional)
+	Image       string       `json:"image,omitempty" example:"/9j/4AAQSkZJRgABAQAAAQ..."` // Base64 encoded image (optional)
 }
 
-// Alias the RecipeRequest for better semantics
+// RecipeRequest aliases
 type CreateRecipeRequest = RecipeRequest
 type UpdateRecipeRequest = RecipeRequest
 
-// CreateRecipeFromImageRequest represents the request for creating a recipe from an image
 // @Description Request for AI-powered recipe creation from image
 type CreateRecipeFromImageRequest struct {
-	Image     string `json:"image" example:"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ..."` // Base64 encoded image
-	ImageType string `json:"image_type" example:"jpeg"`                                        // "jpeg", "jpg", "png"
+	Image     string `json:"image" example:"/9j/4AAQSkZJRgABAQAAAQ..."` // Base64 encoded image
+	ImageType string `json:"image_type" example:"jpeg"`                 // "jpeg", "jpg", "png"
 }
 
-// CreateRecipeFromUrlRequest represents the request for creating a recipe from a URL
 // @Description Request for AI-powered recipe creation from URL
 type CreateRecipeFromUrlRequest struct {
 	URL string `json:"url" example:"https://example.com/recipe"` // URL to a webpage with recipe or to an image of a recipe
@@ -42,7 +38,6 @@ type CreateRecipeFromUrlRequest struct {
 
 // Response models
 
-// APIResponse represents the standard API response format
 // @Description Standard API response wrapper
 type APIResponse struct {
 	Success bool      `json:"success" example:"true"`
@@ -50,7 +45,6 @@ type APIResponse struct {
 	Error   *APIError `json:"error,omitempty"`
 }
 
-// APIError represents an API error
 // @Description API error information
 type APIError struct {
 	Code    string `json:"code" example:"validation_error"`
