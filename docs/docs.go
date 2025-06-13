@@ -5,11 +5,23 @@ import "github.com/swaggo/swag"
 
 const docTemplate = `{
     "schemes": {{ marshal .Schemes }},
+    "produces": [
+        "application/json"
+    ],
     "swagger": "2.0",
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "contact": {},
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "API Support",
+            "url": "http://www.recipebank.example.com/support",
+            "email": "support@recipebank.example.com"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+        },
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
@@ -957,12 +969,12 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "",
-	Host:             "",
-	BasePath:         "",
-	Schemes:          []string{},
-	Title:            "",
-	Description:      "",
+	Version:          "1.0",
+	Host:             "localhost:8080",
+	BasePath:         "/api/v1",
+	Schemes:          []string{"http", "https"},
+	Title:            "RecipeBank API",
+	Description:      "A recipe management API with AI-powered features",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

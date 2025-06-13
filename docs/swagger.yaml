@@ -1,3 +1,4 @@
+basePath: /api/v1
 definitions:
   models.APIError:
     description: API error information
@@ -214,8 +215,19 @@ definitions:
     - steps
     - title
     type: object
+host: localhost:8080
 info:
-  contact: {}
+  contact:
+    email: support@recipebank.example.com
+    name: API Support
+    url: http://www.recipebank.example.com/support
+  description: A recipe management API with AI-powered features
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: RecipeBank API
+  version: "1.0"
 paths:
   /recipe:
     get:
@@ -574,4 +586,9 @@ paths:
       summary: Create recipe from URL using AI
       tags:
       - ai-recipes
+produces:
+- application/json
+schemes:
+- http
+- https
 swagger: "2.0"

@@ -16,6 +16,7 @@ func main() {
 
 	cfg := core.Config()
 
+	// Create storage
 	dbConfig := storage.StorageConfig{
 		Host:     cfg.Database.Host,
 		Port:     int(cfg.Database.Port),
@@ -23,8 +24,6 @@ func main() {
 		Password: cfg.Database.Password,
 		Database: cfg.Database.Database,
 	}
-
-	// Create storage
 	storage, err := storage.NewMongoStorage(ctx, dbConfig)
 	if err != nil {
 		slog.Error("Unable to create new storage", "error", err.Error())
