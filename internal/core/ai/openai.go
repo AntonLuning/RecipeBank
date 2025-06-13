@@ -21,7 +21,9 @@ const (
 	1. Do NOT translate any content.
 	2. Do NOT change the text or the order of the text content (e.g. ingredients, steps, etc.).
 	3. If you cannot find the information, leave the JSON field empty. I.e., if an ingredient is missing quantity or unit, set those to default values (0 or "").
-	4. Do NOT make up any information.`
+	4. Do NOT make up any information. The only exception is if the recipe is missing a description, then you can make one up.
+	5. If the any parts of the text are not in "sentence case", fix them (including ingredients, steps, etc.).
+	6. Be careful when parsing ingredients, the units can sometimes be mistaken for being part of the ingredient name.`
 )
 
 type OpenAI struct {

@@ -15,7 +15,6 @@ import (
 	"github.com/AntonLuning/RecipeBank/internal/ui/components/modal"
 )
 
-// CreateRecipeModal renders the modal for creating new recipes
 func CreateRecipeModal() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -212,7 +211,6 @@ func CreateRecipeModal() templ.Component {
 	})
 }
 
-// ManualCreationItem renders the manual recipe creation accordion item
 func createManualRecipe() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -333,7 +331,6 @@ func createManualRecipe() templ.Component {
 	})
 }
 
-// URLCreationItem renders the URL-based recipe creation accordion item
 func createRecipeFromURL() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -405,12 +402,13 @@ func createRecipeFromURL() templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<div class=\"space-y-4\" x-data=\"{ recipeUrl: &#39;&#39;, isValidUrl: false }\"><p class=\"text-sm text-muted-foreground\">Import recipe from a website automatically</p><div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<div class=\"space-y-4\"><p class=\"text-sm text-muted-foreground\">Import recipe from a website automatically</p><form action=\"/recipe/from-url\" method=\"post\" x-data=\"{ recipeUrl: &#39;&#39;, isValidUrl: false }\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				templ_7745c5c3_Err = input.Input(input.Props{
 					Type:        input.TypeURL,
+					Name:        "url",
 					Placeholder: "https://example.com/recipe",
 					Class:       "mb-3",
 					Attributes: templ.Attributes{
@@ -440,6 +438,7 @@ func createRecipeFromURL() templ.Component {
 					return nil
 				})
 				templ_7745c5c3_Err = button.Button(button.Props{
+					Type:  button.TypeSubmit,
 					Class: "w-full transition-all duration-200",
 					Attributes: templ.Attributes{
 						":disabled": "!isValidUrl",
@@ -449,7 +448,7 @@ func createRecipeFromURL() templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</form></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -469,7 +468,6 @@ func createRecipeFromURL() templ.Component {
 	})
 }
 
-// ImageCreationItem renders the image-based recipe creation accordion item
 func createRecipeFromImage() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -541,7 +539,7 @@ func createRecipeFromImage() templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<div class=\"space-y-4\"><p class=\"text-sm text-muted-foreground\">Upload a photo and let AI extract the recipe</p><div x-data=\"{ fileName: &#39;&#39;, hasFile: false }\"><label class=\"relative block border-2 border-dashed rounded-lg p-4 hover:border-primary/50 hover:bg-accent/25 transition-all duration-200 cursor-pointer group mb-3\" :class=\"hasFile ? &#39;border-primary/50 bg-accent/25&#39; : &#39;border-muted-foreground/25&#39;\"><div class=\"flex items-center justify-center space-x-2 pointer-events-none\" :class=\"hasFile ? &#39;text-primary&#39; : &#39;text-muted-foreground group-hover:text-primary&#39;\"><svg x-show=\"!hasFile\" class=\"w-5 h-5\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12\"></path></svg> <svg x-show=\"hasFile\" class=\"w-5 h-5\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\" style=\"display: none;\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z\"></path></svg> <span class=\"text-sm font-medium\" x-text=\"hasFile ? fileName : &#39;Click to upload image&#39;\">Click to upload image</span></div><p class=\"text-xs text-muted-foreground text-center mt-1 pointer-events-none\" x-text=\"hasFile ? &#39;Click to change file&#39; : &#39;JPEG/JPG/PNG files only&#39;\"></p>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<div class=\"space-y-4\"><p class=\"text-sm text-muted-foreground\">Upload a photo and let AI extract the recipe</p><form action=\"/recipe/from-image\" method=\"post\" enctype=\"multipart/form-data\" x-data=\"{ fileName: &#39;&#39;, hasFile: false }\"><label class=\"relative block border-2 border-dashed rounded-lg p-4 hover:border-primary/50 hover:bg-accent/25 transition-all duration-200 cursor-pointer group mb-3\" :class=\"hasFile ? &#39;border-primary/50 bg-accent/25&#39; : &#39;border-muted-foreground/25&#39;\"><div class=\"flex items-center justify-center space-x-2 pointer-events-none\" :class=\"hasFile ? &#39;text-primary&#39; : &#39;text-muted-foreground group-hover:text-primary&#39;\"><svg x-show=\"!hasFile\" class=\"w-5 h-5\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12\"></path></svg> <svg x-show=\"hasFile\" class=\"w-5 h-5\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\" style=\"display: none;\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z\"></path></svg> <span class=\"text-sm font-medium\" x-text=\"hasFile ? fileName : &#39;Click to upload image&#39;\">Click to upload image</span></div><p class=\"text-xs text-muted-foreground text-center mt-1 pointer-events-none\" x-text=\"hasFile ? &#39;Click to change file&#39; : &#39;JPEG/JPG/PNG files only&#39;\"></p>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -549,6 +547,7 @@ func createRecipeFromImage() templ.Component {
 					Type:       input.TypeFile,
 					FileAccept: "image/jpeg,image/png",
 					Class:      "absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10",
+					Name:       "image",
 					Attributes: templ.Attributes{
 						"@change": "if ($event.target.files.length > 0) { fileName = $event.target.files[0].name; hasFile = true; } else { fileName = ''; hasFile = false; }",
 					},
@@ -579,6 +578,7 @@ func createRecipeFromImage() templ.Component {
 					return nil
 				})
 				templ_7745c5c3_Err = button.Button(button.Props{
+					Type:  button.TypeSubmit,
 					Class: "w-full transition-all duration-200",
 					Attributes: templ.Attributes{
 						":disabled": "!hasFile",
@@ -588,7 +588,7 @@ func createRecipeFromImage() templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "</div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "</form></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

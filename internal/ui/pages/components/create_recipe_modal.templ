@@ -7,7 +7,6 @@ import (
 	"github.com/AntonLuning/RecipeBank/internal/ui/components/modal"
 )
 
-// CreateRecipeModal renders the modal for creating new recipes
 templ CreateRecipeModal() {
 	@modal.Modal(modal.Props{
 		ID: "create-recipe-modal",
@@ -44,7 +43,6 @@ templ CreateRecipeModal() {
 	}
 }
 
-// ManualCreationItem renders the manual recipe creation accordion item
 templ createManualRecipe() {
 	@accordion.Item() {
 		@accordion.Trigger() {
@@ -65,6 +63,7 @@ templ createManualRecipe() {
 				@button.Button(button.Props{
 					Class: "w-full",
 					Href: "/recipe/create",
+					Disabled: true,
 				}) {
 					Create Recipe
 				}
@@ -73,7 +72,6 @@ templ createManualRecipe() {
 	}
 }
 
-// URLCreationItem renders the URL-based recipe creation accordion item
 templ createRecipeFromURL() {
 	@accordion.Item() {
 		@accordion.Trigger() {
@@ -89,11 +87,12 @@ templ createRecipeFromURL() {
 			</div>
 		}
 		@accordion.Content() {
-			<div class="space-y-4" x-data="{ recipeUrl: '', isValidUrl: false }">
+			<div class="space-y-4">
 				<p class="text-sm text-muted-foreground">Import recipe from a website automatically</p>
-				<div>
+				<form action="/recipe/from-url" method="post" x-data="{ recipeUrl: '', isValidUrl: false }">
 					@input.Input(input.Props{
 						Type: input.TypeURL, 
+						Name: "url",
 						Placeholder: "https://example.com/recipe",
 						Class: "mb-3",
 						Attributes: templ.Attributes{
@@ -102,6 +101,7 @@ templ createRecipeFromURL() {
 						},
 					})
 					@button.Button(button.Props{
+						Type: button.TypeSubmit,
 						Class: "w-full transition-all duration-200",
 						Attributes: templ.Attributes{
 							":disabled": "!isValidUrl",
@@ -110,13 +110,12 @@ templ createRecipeFromURL() {
 					}) {
 						Create Recipe
 					}
-				</div>
+				</form>
 			</div>
 		}
 	}
 }
 
-// ImageCreationItem renders the image-based recipe creation accordion item
 templ createRecipeFromImage() {
 	@accordion.Item() {
 		@accordion.Trigger() {
@@ -134,7 +133,7 @@ templ createRecipeFromImage() {
 		@accordion.Content() {
 			<div class="space-y-4">
 				<p class="text-sm text-muted-foreground">Upload a photo and let AI extract the recipe</p>
-				<div x-data="{ fileName: '', hasFile: false }">
+				<form action="/recipe/from-image" method="post" enctype="multipart/form-data" x-data="{ fileName: '', hasFile: false }">
 					<label 
 						class="relative block border-2 border-dashed rounded-lg p-4 hover:border-primary/50 hover:bg-accent/25 transition-all duration-200 cursor-pointer group mb-3"
 						:class="hasFile ? 'border-primary/50 bg-accent/25' : 'border-muted-foreground/25'"
@@ -156,12 +155,14 @@ templ createRecipeFromImage() {
 							Type: input.TypeFile, 
 							FileAccept: "image/jpeg,image/png", 
 							Class: "absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10",
+							Name: "image",
 							Attributes: templ.Attributes{
 								"@change": "if ($event.target.files.length > 0) { fileName = $event.target.files[0].name; hasFile = true; } else { fileName = ''; hasFile = false; }",
 							},
 						})
 					</label>
 					@button.Button(button.Props{
+						Type: button.TypeSubmit,
 						Class: "w-full transition-all duration-200",
 						Attributes: templ.Attributes{
 							":disabled": "!hasFile",
@@ -170,8 +171,8 @@ templ createRecipeFromImage() {
 					}) {
 						Create Recipe
 					}
-				</div>
+				</form>
 			</div>
 		}
 	}
-} 
+}

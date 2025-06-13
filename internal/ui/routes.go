@@ -19,6 +19,10 @@ func InitRoutes(m *http.ServeMux, apiURL string) {
 
 	m.HandleFunc("GET /recipe", handlers.GetRecipesOverviewPage(apiURL)) // Recipes overview page
 	m.HandleFunc("GET /recipe/{id}", handlers.GetRecipePage(apiURL))     // Recipe detail page
+
+	// m.HandleFunc("POST /recipe", handlers.CreateRecipe(apiURL))                     // Create recipe endpoint
+	m.HandleFunc("POST /recipe/from-url", handlers.CreateRecipeFromURL(apiURL))     // Create recipe from URL endpoint
+	m.HandleFunc("POST /recipe/from-image", handlers.CreateRecipeFromImage(apiURL)) // Create recipe from image endpoint
 }
 
 func serveFavicon(assetsPath string) http.Handler {
