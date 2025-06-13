@@ -44,6 +44,7 @@ generate-templ:
 generate-assets:
 	@npx tailwindcss -i ./assets/css/input.css -o $(ASSETS_PATH)/css/output.css --content "./internal/ui/**/*.{templ,go}" --content "./internal/ui/components/**/*.{templ,go}"
 	@cp -r ./assets/img/ $(ASSETS_PATH)/.
+	@cp -r ./assets/js/ $(ASSETS_PATH)/.
 
 .PHONY: mongo-start
 mongo-start:

@@ -87,4 +87,19 @@
       "rlig" 1,
       "calt" 1;
   }
+}
+
+@layer components {
+  /* Make placeholder text less aggressive */
+  input::placeholder {
+    opacity: 0.4;
+    font-size: 0.875rem;
+    font-style: italic;
+  }
+  
+  /* URL input placeholder specifically */
+  input[type="url"]::placeholder {
+    opacity: 0.3;
+    font-size: 0.8125rem;
+  }
 } 
