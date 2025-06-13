@@ -13,11 +13,7 @@ const docTemplate = `{
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
         "termsOfService": "http://swagger.io/terms/",
-        "contact": {
-            "name": "API Support",
-            "url": "http://www.recipebank.example.com/support",
-            "email": "support@recipebank.example.com"
-        },
+        "contact": {},
         "license": {
             "name": "MIT",
             "url": "https://opensource.org/licenses/MIT"
@@ -706,7 +702,7 @@ const docTemplate = `{
                 "image": {
                     "description": "Base64 encoded image",
                     "type": "string",
-                    "example": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ..."
+                    "example": "/9j/4AAQSkZJRgABAQAAAQ..."
                 },
                 "image_type": {
                     "description": "\"jpeg\", \"jpg\", \"png\"",
@@ -746,7 +742,7 @@ const docTemplate = `{
                 "image": {
                     "description": "Base64 encoded image (optional)",
                     "type": "string",
-                    "example": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ..."
+                    "example": "/9j/4AAQSkZJRgABAQAAAQ..."
                 },
                 "ingredients": {
                     "type": "array",
@@ -922,7 +918,7 @@ const docTemplate = `{
                 "image": {
                     "description": "Base64 encoded image (optional)",
                     "type": "string",
-                    "example": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ..."
+                    "example": "/9j/4AAQSkZJRgABAQAAAQ..."
                 },
                 "ingredients": {
                     "type": "array",
@@ -970,7 +966,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "localhost:8080",
+	Host:             "localhost:9876",
 	BasePath:         "/api/v1",
 	Schemes:          []string{"http", "https"},
 	Title:            "RecipeBank API",

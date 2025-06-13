@@ -8,14 +8,10 @@
 // @description A recipe management API with AI-powered features
 // @termsOfService http://swagger.io/terms/
 //
-// @contact.name API Support
-// @contact.url http://www.recipebank.example.com/support
-// @contact.email support@recipebank.example.com
-//
 // @license.name MIT
 // @license.url https://opensource.org/licenses/MIT
 //
-// @host localhost:8080
+// @host localhost:9876
 // @BasePath /api/v1
 //
 // @schemes http https

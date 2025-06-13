@@ -25,7 +25,7 @@ definitions:
     properties:
       image:
         description: Base64 encoded image
-        example: data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ...
+        example: /9j/4AAQSkZJRgABAQAAAQ...
         type: string
       image_type:
         description: '"jpeg", "jpg", "png"'
@@ -51,7 +51,7 @@ definitions:
         type: string
       image:
         description: Base64 encoded image (optional)
-        example: data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ...
+        example: /9j/4AAQSkZJRgABAQAAAQ...
         type: string
       ingredients:
         items:
@@ -180,7 +180,7 @@ definitions:
         type: string
       image:
         description: Base64 encoded image (optional)
-        example: data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ...
+        example: /9j/4AAQSkZJRgABAQAAAQ...
         type: string
       ingredients:
         items:
@@ -215,12 +215,9 @@ definitions:
     - steps
     - title
     type: object
-host: localhost:8080
+host: localhost:9876
 info:
-  contact:
-    email: support@recipebank.example.com
-    name: API Support
-    url: http://www.recipebank.example.com/support
+  contact: {}
   description: A recipe management API with AI-powered features
   license:
     name: MIT
