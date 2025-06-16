@@ -4,6 +4,7 @@ import (
 	"github.com/AntonLuning/RecipeBank/pkg/models"
 	"github.com/AntonLuning/RecipeBank/internal/ui/components/card"
 	"github.com/AntonLuning/RecipeBank/internal/ui/components/button"
+	"github.com/AntonLuning/RecipeBank/internal/ui/pages/components"
 )
 
 type RecipePageData struct {
@@ -45,7 +46,7 @@ templ recipeDetail(recipe *models.Recipe) {
 				@card.Card(card.Props{}) {
 					<div class="aspect-w-16 aspect-h-12">
 						<img 
-							src={ getRecipeImageSrc(recipe.Image) }
+							src={ components.GetRecipeImageSrc(recipe.Image) }
 							alt={ recipe.Title }
 							class="w-full h-80 object-cover rounded-lg"
 							onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDQwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xNjggMTUwQzE2OCAxMzMuNDMxIDE4MS40MzEgMTIwIDE5OCAxMjBDMjE0LjU2OSAxMjAgMjI4IDEzMy40MzEgMjI4IDE1MEMyMjggMTY2LjU2OSAyMTQuNTY5IDE4MCAyMTQgMTgwQzE4MS40MzEgMTgwIDE2OCAxNjYuNTY5IDE2OCAxNTBaIiBmaWxsPSIjOUNBM0FGIi8+CjxwYXRoIGQ9Ik0xMzYgMjAwTDE2OC42ODYzIDE2Ny4zMTRDMTc0LjkzNSAxNjEuMDY1IDE4NS4wNjUgMTYxLjA2NSAxOTEuMzE0IDE2Ny4zMTRMMjY0IDIwMEgxMzZaIiBmaWxsPSIjOUNBM0FGIi8+Cjwvc3ZnPg=='"
@@ -70,7 +71,7 @@ templ recipeDetail(recipe *models.Recipe) {
 										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
 									</svg>
 									<span class="text-sm font-medium">Cook Time:</span>
-									<span class="ml-2 text-foreground">{ formatCookTime(recipe.CookTime) }</span>
+									<span class="ml-2 text-foreground">{ components.FormatCookTime(recipe.CookTime) }</span>
 								</div>
 							}
 							if recipe.Servings > 0 {
@@ -79,7 +80,7 @@ templ recipeDetail(recipe *models.Recipe) {
 										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
 									</svg>
 									<span class="text-sm font-medium">Servings:</span>
-									<span class="ml-2 text-foreground">{ formatServings(recipe.Servings) }</span>
+									<span class="ml-2 text-foreground">{ components.FormatServings(recipe.Servings) }</span>
 								</div>
 							}
 							if len(recipe.Tags) > 0 {
@@ -178,4 +179,4 @@ templ recipeErrorState(errorMsg string) {
 			}
 		}
 	</div>
-} 
+}

@@ -102,4 +102,26 @@
     opacity: 0.3;
     font-size: 0.8125rem;
   }
+
+  /* Alpine AJAX skeleton loading states */
+  [aria-busy="true"] {
+    position: relative;
+  }
+  
+  [aria-busy="true"] .recipe-content {
+    opacity: 0;
+  }
+  
+  [aria-busy="true"] .skeleton-overlay {
+    display: block;
+  }
+  
+  .skeleton-overlay {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+  }
 } 

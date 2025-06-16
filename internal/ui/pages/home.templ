@@ -1,0 +1,38 @@
+package pages
+
+import (
+	"github.com/AntonLuning/RecipeBank/internal/ui/components/button"
+	"github.com/AntonLuning/RecipeBank/internal/ui/components/modal"
+	"github.com/AntonLuning/RecipeBank/internal/ui/pages/components"
+)
+
+templ HomePage() {
+	@BaseLayout("Recipe Bank - Home") {
+		@homeHeader()
+		@components.RecipesOverviewLoading()
+		@components.CreateRecipeModal()
+	}
+}
+
+templ homeHeader() {
+	<div class="mb-8">
+		<div class="flex justify-between items-center">
+			<div>
+				<h1 class="text-4xl font-bold text-foreground mb-2">Recipe Collection</h1>
+				<p class="text-muted-foreground">Discover and explore our delicious recipes</p>
+			</div>
+			<div>
+				@modal.Trigger(modal.TriggerProps{ModalID: "create-recipe-modal"}) {
+					@button.Button(button.Props{
+						Class: "bg-primary text-primary-foreground hover:bg-primary/90",
+					}) {
+						<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+						</svg>
+						New Recipe
+					}
+				}
+			</div>
+		</div>
+	</div>
+}

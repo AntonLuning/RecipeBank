@@ -13,12 +13,9 @@ func InitAssets(m *http.ServeMux, assetsPath string, isDebug bool) {
 }
 
 func InitRoutes(m *http.ServeMux, apiURL string) {
-	m.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/recipe", http.StatusMovedPermanently) // TODO: Temporary until we have a proper home page
-	})
-
-	m.HandleFunc("GET /recipe", handlers.GetRecipesOverviewPage(apiURL)) // Recipes overview page
-	m.HandleFunc("GET /recipe/{id}", handlers.GetRecipePage(apiURL))     // Recipe detail page
+	m.HandleFunc("GET /", handlers.GetHomePage(apiURL))                              // Home page
+	m.HandleFunc("GET /partial/recipes", handlers.GetRecipesOverviewPartial(apiURL)) // Recipes overview partial
+	m.HandleFunc("GET /recipe/{id}", handlers.GetRecipePage(apiURL))                 // Recipe detail page
 
 	// m.HandleFunc("POST /recipe", handlers.CreateRecipe(apiURL))                     // Create recipe endpoint
 	m.HandleFunc("POST /recipe/from-url", handlers.CreateRecipeFromURL(apiURL))     // Create recipe from URL endpoint

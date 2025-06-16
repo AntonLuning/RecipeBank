@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/AntonLuning/RecipeBank/internal/ui/pages"
+	"github.com/AntonLuning/RecipeBank/internal/ui/pages/components"
 	"github.com/AntonLuning/RecipeBank/pkg/models"
 )
 
-func GetRecipesOverviewPage(apiURL string) http.HandlerFunc {
+func GetRecipesOverviewPartial(apiURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
@@ -49,7 +49,7 @@ func GetRecipesOverviewPage(apiURL string) http.HandlerFunc {
 		recipePage, err := fetchRecipesFromAPI(apiURL, apiEndpoint)
 		if err != nil {
 			// Handle error - render page with error state
-			component := pages.RecipesOverviewPage(pages.RecipesPageData{
+			component := components.RecipesOverview(components.RecipesPageData{
 				RecipePage:  nil,
 				Error:       err.Error(),
 				SearchQuery: r.URL.Query(),
@@ -61,7 +61,7 @@ func GetRecipesOverviewPage(apiURL string) http.HandlerFunc {
 		}
 
 		// Render page with recipes
-		component := pages.RecipesOverviewPage(pages.RecipesPageData{
+		component := components.RecipesOverview(components.RecipesPageData{
 			RecipePage:  recipePage,
 			Error:       "",
 			SearchQuery: r.URL.Query(),
