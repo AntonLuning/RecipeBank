@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/AntonLuning/RecipeBank/internal/ui/pages/components"
 	"github.com/AntonLuning/RecipeBank/pkg/models"
@@ -75,6 +76,7 @@ func GetRecipesOverviewPartial(apiURL string) http.HandlerFunc {
 
 func fetchRecipesFromAPI(apiBaseURL string, apiEndpoint string) (*models.RecipePage, error) {
 	recipePage, err := fetchFromAPI[models.RecipePage](apiBaseURL, apiEndpoint)
+	time.Sleep(100 * time.Millisecond) // For user experience when perfroming lazy loading (avoiding flash of content)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch recipes: %w", err)
 	}
