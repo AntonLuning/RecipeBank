@@ -108,7 +108,7 @@ func RecipesOverview(data RecipesPageData) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			if data.RecipePage != nil && data.RecipePage.TotalPages > 1 {
-				templ_7745c5c3_Err = recipePagination(data.RecipePage).Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = recipePagination(data.RecipePage, data.SearchQuery).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -167,7 +167,7 @@ func recipeFilters(searchQuery map[string][]string) templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<form method=\"GET\" action=\"/\"><div class=\"grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4\"><div><label for=\"title\" class=\"block text-sm font-medium text-foreground mb-2\">Recipe Title</label> <input id=\"title\" name=\"title\" type=\"text\" value=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<form method=\"GET\" action=\"/partial/recipes\" x-target=\"recipes-overview\"><div class=\"grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4\"><div><label for=\"title\" class=\"block text-sm font-medium text-foreground mb-2\">Recipe Title</label> <input id=\"title\" name=\"title\" type=\"text\" value=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -794,7 +794,7 @@ func errorState(errorMsg string) templ.Component {
 	})
 }
 
-func recipePagination(recipePage *models.RecipePage) templ.Component {
+func recipePagination(recipePage *models.RecipePage, searchQuery map[string][]string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -853,8 +853,11 @@ func recipePagination(recipePage *models.RecipePage) templ.Component {
 						}
 						ctx = templ.InitializeContext(ctx)
 						templ_7745c5c3_Err = pagination.Previous(pagination.PreviousProps{
-							Href:  "?page=" + FormatPageNumber(recipePage.Page-1),
+							Href:  "/partial/recipes?" + BuildPaginationQueryString(recipePage.Page-1, searchQuery),
 							Label: "Previous",
+							Attributes: templ.Attributes{
+								"x-target": "recipes-overview",
+							},
 						}).Render(ctx, templ_7745c5c3_Buffer)
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
@@ -895,7 +898,7 @@ func recipePagination(recipePage *models.RecipePage) templ.Component {
 								var templ_7745c5c3_Var41 string
 								templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(FormatPageNumber(i))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/components/recipe_overview.templ`, Line: 250, Col: 28}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/components/recipe_overview.templ`, Line: 253, Col: 28}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 								if templ_7745c5c3_Err != nil {
@@ -943,7 +946,7 @@ func recipePagination(recipePage *models.RecipePage) templ.Component {
 								var templ_7745c5c3_Var44 string
 								templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(FormatPageNumber(i))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/components/recipe_overview.templ`, Line: 258, Col: 28}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/components/recipe_overview.templ`, Line: 264, Col: 28}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
 								if templ_7745c5c3_Err != nil {
@@ -952,7 +955,10 @@ func recipePagination(recipePage *models.RecipePage) templ.Component {
 								return nil
 							})
 							templ_7745c5c3_Err = pagination.Link(pagination.LinkProps{
-								Href: "?page=" + FormatPageNumber(i),
+								Href: "/partial/recipes?" + BuildPaginationQueryString(i, searchQuery),
+								Attributes: templ.Attributes{
+									"x-target": "recipes-overview",
+								},
 							}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var43), templ_7745c5c3_Buffer)
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
@@ -983,8 +989,11 @@ func recipePagination(recipePage *models.RecipePage) templ.Component {
 						}
 						ctx = templ.InitializeContext(ctx)
 						templ_7745c5c3_Err = pagination.Next(pagination.NextProps{
-							Href:  "?page=" + FormatPageNumber(recipePage.Page+1),
+							Href:  "/partial/recipes?" + BuildPaginationQueryString(recipePage.Page+1, searchQuery),
 							Label: "Next",
+							Attributes: templ.Attributes{
+								"x-target": "recipes-overview",
+							},
 						}).Render(ctx, templ_7745c5c3_Buffer)
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err

@@ -2,6 +2,7 @@ package components
 
 import (
 	"fmt"
+	"net/url"
 	"strconv"
 )
 
@@ -10,6 +11,27 @@ func GetQueryValue(query map[string][]string, key string) string {
 		return values[0]
 	}
 	return ""
+}
+
+func BuildPaginationQueryString(page int, searchQuery map[string][]string) string {
+	params := url.Values{}
+	params.Set("page", strconv.Itoa(page))
+
+	// Add existing search parameters
+	if title := GetQueryValue(searchQuery, "title"); title != "" {
+		params.Set("title", title)
+	}
+	if ingredientNames := GetQueryValue(searchQuery, "ingredient_names"); ingredientNames != "" {
+		params.Set("ingredient_names", ingredientNames)
+	}
+	if cookTime := GetQueryValue(searchQuery, "cook_time"); cookTime != "" {
+		params.Set("cook_time", cookTime)
+	}
+	if tags := GetQueryValue(searchQuery, "tags"); tags != "" {
+		params.Set("tags", tags)
+	}
+
+	return params.Encode()
 }
 
 func GetRecipeImageSrc(image string) string {

@@ -31,7 +31,7 @@ templ RecipesOverview(data RecipesPageData) {
 		} else {
 			@recipeGrid(data.RecipePage.Recipes)
 			if data.RecipePage != nil && data.RecipePage.TotalPages > 1 {
-				@recipePagination(data.RecipePage)
+				@recipePagination(data.RecipePage, data.SearchQuery)
 			}
 		}
 	</div>
@@ -40,7 +40,7 @@ templ RecipesOverview(data RecipesPageData) {
 templ recipeFilters(searchQuery map[string][]string) {
 	@card.Card(card.Props{Class: "mb-8"}) {
 		@card.Content() {
-			<form method="GET" action="/">
+			<form method="GET" action="/partial/recipes" x-target="recipes-overview">
 				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
 					<div>
 						<label for="title" class="block text-sm font-medium text-foreground mb-2">Recipe Title</label>
@@ -229,15 +229,18 @@ templ errorState(errorMsg string) {
 	}
 }
 
-templ recipePagination(recipePage *models.RecipePage) {
+templ recipePagination(recipePage *models.RecipePage, searchQuery map[string][]string) {
 	@pagination.Pagination(pagination.Props{Class: "mt-8"}) {
 		@pagination.Content() {
 			if recipePage.Page > 1 {
 				@pagination.Item() {
 					@pagination.Previous(pagination.PreviousProps{
-						Href:  "?page=" + FormatPageNumber(recipePage.Page - 1),
-						Label: "Previous",
-					})
+                        Href:  "/partial/recipes?" + BuildPaginationQueryString(recipePage.Page - 1, searchQuery),
+                        Label: "Previous",
+						Attributes: templ.Attributes{
+							"x-target": "recipes-overview",
+						},
+                    })
 				}
 			}
 			
@@ -253,7 +256,10 @@ templ recipePagination(recipePage *models.RecipePage) {
 				} else if ShouldShowPage(i, recipePage.Page, recipePage.TotalPages) {
 					@pagination.Item() {
 						@pagination.Link(pagination.LinkProps{
-							Href: "?page=" + FormatPageNumber(i),
+							Href: "/partial/recipes?" + BuildPaginationQueryString(i, searchQuery),
+							Attributes: templ.Attributes{
+								"x-target": "recipes-overview",
+							},
 						}) {
 							{ FormatPageNumber(i) }
 						}
@@ -264,8 +270,11 @@ templ recipePagination(recipePage *models.RecipePage) {
 			if recipePage.Page < recipePage.TotalPages {
 				@pagination.Item() {
 					@pagination.Next(pagination.NextProps{
-						Href:  "?page=" + FormatPageNumber(recipePage.Page + 1),
+						Href:  "/partial/recipes?" + BuildPaginationQueryString(recipePage.Page + 1, searchQuery),
 						Label: "Next",
+						Attributes: templ.Attributes{
+							"x-target": "recipes-overview",
+						},
 					})
 				}
 			}

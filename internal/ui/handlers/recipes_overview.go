@@ -22,7 +22,7 @@ func GetRecipesOverviewPartial(apiURL string) http.HandlerFunc {
 			}
 		}
 
-		limit := 12
+		limit := 12 // Default limit is 12 recipes per page
 		if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
 			if l, err := strconv.Atoi(limitStr); err == nil && l > 0 && l <= 50 {
 				limit = l
