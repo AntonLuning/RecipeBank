@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/AntonLuning/RecipeBank/internal/core/middleware"
 	"github.com/AntonLuning/RecipeBank/internal/core/service"
 	"github.com/AntonLuning/RecipeBank/internal/core/storage"
 	"github.com/AntonLuning/RecipeBank/pkg/models"
@@ -19,7 +20,7 @@ import (
 	_ "github.com/AntonLuning/RecipeBank/docs" // Import generated swagger docs
 )
 
-type apiFunc func(context.Context, http.ResponseWriter, *http.Request) error
+type apiFunc func(http.ResponseWriter, *http.Request) error
 
 type APIServer struct {
 	addr    string
@@ -66,7 +67,7 @@ func (s *APIServer) v1Mux() http.Handler {
 	v1Mux.HandleFunc("POST /recipe/ai/from-image", makeHTTPHandlerFunc(s.handlePostRecipeFromImage))
 	v1Mux.HandleFunc("POST /recipe/ai/from-url", makeHTTPHandlerFunc(s.handlePostRecipeFromURL))
 
-	return v1Mux
+	return middleware.LoggingMiddleware(v1Mux)
 }
 
 // GetRecipes godoc
@@ -85,13 +86,13 @@ func (s *APIServer) v1Mux() http.Handler {
 // @Failure 400 {object} models.APIResponse{error=models.APIError} "Invalid query parameters"
 // @Failure 500 {object} models.APIResponse{error=models.APIError} "Internal server error"
 // @Router /recipe [get]
-func (s *APIServer) handleGetRecipes(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (s *APIServer) handleGetRecipes(w http.ResponseWriter, r *http.Request) error {
 	var query models.GetRecipesQuery
 	if err := s.parseQueryParams(r, &query); err != nil {
 		return err
 	}
 
-	recipes, err := s.service.GetRecipes(ctx, query.Filter, query.Page, query.Limit)
+	recipes, err := s.service.GetRecipes(r.Context(), query.Filter, query.Page, query.Limit)
 	if err != nil {
 		return err
 	}
@@ -111,13 +112,13 @@ func (s *APIServer) handleGetRecipes(ctx context.Context, w http.ResponseWriter,
 // @Failure 404 {object} models.APIResponse{error=models.APIError} "Recipe not found"
 // @Failure 500 {object} models.APIResponse{error=models.APIError} "Internal server error"
 // @Router /recipe/{id} [get]
-func (s *APIServer) handleGetRecipeByID(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (s *APIServer) handleGetRecipeByID(w http.ResponseWriter, r *http.Request) error {
 	id := r.PathValue("id")
 	if id == "" {
 		return fmt.Errorf("%w: id parameter is required", ErrMissingPathParam)
 	}
 
-	recipe, err := s.service.GetRecipe(ctx, id)
+	recipe, err := s.service.GetRecipe(r.Context(), id)
 	if err != nil {
 		return err
 	}
@@ -136,7 +137,7 @@ func (s *APIServer) handleGetRecipeByID(ctx context.Context, w http.ResponseWrit
 // @Failure 400 {object} models.APIResponse{error=models.APIError} "Invalid input data"
 // @Failure 500 {object} models.APIResponse{error=models.APIError} "Internal server error"
 // @Router /recipe [post]
-func (s *APIServer) handlePostRecipe(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (s *APIServer) handlePostRecipe(w http.ResponseWriter, r *http.Request) error {
 	var req models.CreateRecipeRequest
 	if err := s.parseJSONBody(w, r, &req); err != nil {
 		return err
@@ -144,7 +145,7 @@ func (s *APIServer) handlePostRecipe(ctx context.Context, w http.ResponseWriter,
 
 	recipe := createRecipeFromRequest(req)
 
-	createdRecipe, err := s.service.CreateRecipe(ctx, recipe)
+	createdRecipe, err := s.service.CreateRecipe(r.Context(), recipe)
 	if err != nil {
 		return err
 	}
@@ -165,7 +166,7 @@ func (s *APIServer) handlePostRecipe(ctx context.Context, w http.ResponseWriter,
 // @Failure 404 {object} models.APIResponse{error=models.APIError} "Recipe not found"
 // @Failure 500 {object} models.APIResponse{error=models.APIError} "Internal server error"
 // @Router /recipe/{id} [put]
-func (s *APIServer) handlePutRecipe(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (s *APIServer) handlePutRecipe(w http.ResponseWriter, r *http.Request) error {
 	id := r.PathValue("id")
 	if id == "" {
 		return fmt.Errorf("%w: id parameter is required", ErrMissingPathParam)
@@ -178,7 +179,7 @@ func (s *APIServer) handlePutRecipe(ctx context.Context, w http.ResponseWriter, 
 
 	recipe := createRecipeFromRequest(req)
 
-	updatedRecipe, err := s.service.UpdateRecipe(ctx, id, recipe)
+	updatedRecipe, err := s.service.UpdateRecipe(r.Context(), id, recipe)
 	if err != nil {
 		return err
 	}
@@ -198,13 +199,13 @@ func (s *APIServer) handlePutRecipe(ctx context.Context, w http.ResponseWriter, 
 // @Failure 404 {object} models.APIResponse{error=models.APIError} "Recipe not found"
 // @Failure 500 {object} models.APIResponse{error=models.APIError} "Internal server error"
 // @Router /recipe/{id} [delete]
-func (s *APIServer) handleDeleteRecipe(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (s *APIServer) handleDeleteRecipe(w http.ResponseWriter, r *http.Request) error {
 	id := r.PathValue("id")
 	if id == "" {
 		return fmt.Errorf("%w: id parameter is required", ErrMissingPathParam)
 	}
 
-	if err := s.service.DeleteRecipe(ctx, id); err != nil {
+	if err := s.service.DeleteRecipe(r.Context(), id); err != nil {
 		return err
 	}
 
@@ -222,13 +223,13 @@ func (s *APIServer) handleDeleteRecipe(ctx context.Context, w http.ResponseWrite
 // @Failure 400 {object} models.APIResponse{error=models.APIError} "Invalid input data or AI processing error"
 // @Failure 500 {object} models.APIResponse{error=models.APIError} "Internal server error"
 // @Router /recipe/ai/from-image [post]
-func (s *APIServer) handlePostRecipeFromImage(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (s *APIServer) handlePostRecipeFromImage(w http.ResponseWriter, r *http.Request) error {
 	var req models.CreateRecipeFromImageRequest
 	if err := s.parseJSONBody(w, r, &req); err != nil {
 		return err
 	}
 
-	recipe, err := s.service.CreateRecipeFromImage(ctx, req.Image, req.ImageType)
+	recipe, err := s.service.CreateRecipeFromImage(r.Context(), req.Image, req.ImageType)
 	if err != nil {
 		return err
 	}
@@ -247,13 +248,13 @@ func (s *APIServer) handlePostRecipeFromImage(ctx context.Context, w http.Respon
 // @Failure 400 {object} models.APIResponse{error=models.APIError} "Invalid input data or AI processing error"
 // @Failure 500 {object} models.APIResponse{error=models.APIError} "Internal server error"
 // @Router /recipe/ai/from-url [post]
-func (s *APIServer) handlePostRecipeFromURL(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (s *APIServer) handlePostRecipeFromURL(w http.ResponseWriter, r *http.Request) error {
 	var req models.CreateRecipeFromUrlRequest
 	if err := s.parseJSONBody(w, r, &req); err != nil {
 		return err
 	}
 
-	recipe, err := s.service.CreateRecipeFromURL(ctx, req.URL)
+	recipe, err := s.service.CreateRecipeFromURL(r.Context(), req.URL)
 	if err != nil {
 		return err
 	}
@@ -263,46 +264,38 @@ func (s *APIServer) handlePostRecipeFromURL(ctx context.Context, w http.Response
 
 func makeHTTPHandlerFunc(apiFn apiFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := context.Background()
-
-		slog.Info("Incoming request", "method", r.Method, "path", r.URL.Path)
-
-		if err := apiFn(ctx, w, r); err != nil {
-			slog.Error("Request failed", "error", err)
-
+		if err := apiFn(w, r); err != nil {
 			switch {
 			case errors.Is(err, ErrJSONDecode):
-				writeErrorResponse(w, http.StatusBadRequest, "invalid_json", "The request body contains invalid JSON")
+				writeErrorResponse(r.Context(), w, http.StatusBadRequest, "invalid_json", "The request body contains invalid JSON", err)
 			case errors.Is(err, ErrInvalidQueryParams):
 				msg := "One or more query parameters are invalid"
 				if paramErr := extractParamNameFromError(err.Error()); paramErr != "" {
 					msg = fmt.Sprintf("Invalid query parameter: %s", paramErr)
 				}
-				writeErrorResponse(w, http.StatusBadRequest, "invalid_query_params", msg)
+				writeErrorResponse(r.Context(), w, http.StatusBadRequest, "invalid_query_params", msg, err)
 			case errors.Is(err, ErrMissingPathParam):
 				msg := "A required path parameter is missing"
 				if paramErr := extractParamNameFromError(err.Error()); paramErr != "" {
 					msg = fmt.Sprintf("Missing required path parameter: %s", paramErr)
 				}
-				writeErrorResponse(w, http.StatusBadRequest, "missing_path_param", msg)
+				writeErrorResponse(r.Context(), w, http.StatusBadRequest, "missing_path_param", msg, err)
 			case errors.Is(err, ErrRequestBodyTooLarge):
-				writeErrorResponse(w, http.StatusRequestEntityTooLarge, "request_too_large", "The request body exceeds the maximum allowed size")
+				writeErrorResponse(r.Context(), w, http.StatusRequestEntityTooLarge, "request_too_large", "The request body exceeds the maximum allowed size", err)
 			case errors.Is(err, service.ErrValidation):
-				writeErrorResponse(w, http.StatusBadRequest, "validation_error", extractValidationDetails(err.Error()))
+				writeErrorResponse(r.Context(), w, http.StatusBadRequest, "validation_error", extractValidationDetails(err.Error()), err)
 			case errors.Is(err, service.ErrInvalidInput):
-				writeErrorResponse(w, http.StatusBadRequest, "invalid_input", extractInputErrorDetails(err.Error()))
+				writeErrorResponse(r.Context(), w, http.StatusBadRequest, "invalid_input", extractInputErrorDetails(err.Error()), err)
 			case errors.Is(err, service.ErrAIUnsupported):
-				writeErrorResponse(w, http.StatusBadRequest, "ai_unsupported", "AI processing is not supported/enabled")
+				writeErrorResponse(r.Context(), w, http.StatusBadRequest, "ai_unsupported", "AI processing is not supported/enabled", err)
 			case errors.Is(err, service.ErrAI):
-				writeErrorResponse(w, http.StatusBadRequest, "ai_error", "An error occurred while processing the AI request")
+				writeErrorResponse(r.Context(), w, http.StatusBadRequest, "ai_error", "An error occurred while processing the AI request", err)
 			case errors.Is(err, storage.ErrInvalidID):
-				writeErrorResponse(w, http.StatusBadRequest, "invalid_id", "The provided ID is invalid or malformed")
+				writeErrorResponse(r.Context(), w, http.StatusBadRequest, "invalid_id", "The provided ID is invalid or malformed", err)
 			case errors.Is(err, storage.ErrNotFound):
-				writeErrorResponse(w, http.StatusNotFound, "not_found", fmt.Sprintf(
-					"The requested %s was not found", extractResourceTypeFromError(err.Error()),
-				))
+				writeErrorResponse(r.Context(), w, http.StatusNotFound, "not_found", extractResourceTypeFromError(err.Error()), err)
 			default:
-				writeErrorResponse(w, http.StatusInternalServerError, "internal_error", "An internal server error occurred")
+				writeErrorResponse(r.Context(), w, http.StatusInternalServerError, "internal_error", "An internal server error occurred", err)
 			}
 		}
 	}
@@ -345,7 +338,8 @@ func writeSuccessResponse(w http.ResponseWriter, status int, data interface{}) e
 	})
 }
 
-func writeErrorResponse(w http.ResponseWriter, status int, code, message string) error {
+func writeErrorResponse(ctx context.Context, w http.ResponseWriter, status int, code string, message string, err error) error {
+	slog.Error("Request failed", "request_id", middleware.GetRequestID(ctx), "error", err, "message", message)
 	return writeJSON(w, status, models.APIResponse{
 		Success: false,
 		Error: &models.APIError{
@@ -428,14 +422,13 @@ func extractValidationDetails(errMsg string) string {
 }
 
 func extractInputErrorDetails(_ string) string {
-	// TODO:This can be enhanced to parse specific input error types
+	// TODO: This can be enhanced to parse specific input error types
 
 	return "The provided input data is invalid or incomplete"
 }
 
 func extractResourceTypeFromError(errMsg string) string {
-	// Default resource type
-	resourceType := "resource"
+	resourceType := "resource" // Default resource type
 
 	lowerMsg := strings.ToLower(errMsg)
 	for _, knownType := range []string{"recipe", "ingredient", "tag"} {
@@ -445,5 +438,5 @@ func extractResourceTypeFromError(errMsg string) string {
 		}
 	}
 
-	return resourceType
+	return fmt.Sprintf("The requested %s was not found", resourceType)
 }

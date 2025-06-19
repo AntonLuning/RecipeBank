@@ -740,7 +740,7 @@ func TestResponseWriters(t *testing.T) {
 	t.Run("writeErrorResponse", func(t *testing.T) {
 		w := httptest.NewRecorder()
 
-		writeErrorResponse(w, http.StatusBadRequest, "invalid_input", "The input is invalid")
+		writeErrorResponse(context.Background(), w, http.StatusBadRequest, "invalid_input", "The input is invalid", nil)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 		assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
@@ -792,8 +792,8 @@ func TestErrorExtractorFunctions(t *testing.T) {
 			errMsg   string
 			expected string
 		}{
-			{"resource not found: recipe with ID 12", "recipe"},
-			{"some other error", "resource"},
+			{"resource not found: recipe with ID 12", "The requested recipe was not found"},
+			{"some other error", "The requested resource was not found"},
 		}
 
 		for _, tc := range tests {
