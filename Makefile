@@ -6,8 +6,8 @@ ASSETS_PATH := "$(BIN_PATH)/assets"
 
 MONGO_PASSWORD := my_mongo_password
 
-.PHONY: run-core
-run-core: build-core
+.PHONY: run-api
+run-api: build-api
 	@mkdir -p $(BIN_PATH)
 	@echo -n $(MONGO_PASSWORD) > $(BIN_PATH)/db_password
 	@export \
@@ -17,11 +17,11 @@ run-core: build-core
 		RP_DB_DATABASE="recipes_db" \
 		RP_AI_PROVIDER="openai" \
 		RP_AI_API_KEY=$(shell cat secrets/openai_key) &&\
-	$(BIN_PATH)/core
+	$(BIN_PATH)/api
 
-.PHONY: build-core
-build-core:
-	@go build -o $(BIN_PATH)/core cmd/core/main.go
+.PHONY: build-api
+build-api:
+	@go build -o $(BIN_PATH)/api cmd/api/main.go
 
 .PHONY: run-ui
 run-ui: build-ui
@@ -68,8 +68,8 @@ test-ai:
 	@export \
 		OPENAI_API_KEY=$(shell cat secrets/openai_key) \
 		TEST_IMAGE_PATH="$(MAKEFILE_DIR)/testdata/recipe_omelett.jpeg" &&\
-	go test ./internal/core/ai/...
+	go test ./internal/api/ai/...
 
 .PHONY: swagger-docs
 swagger-docs:
-	@swag init -g internal/core/docs.go -o docs/
+	@swag init -g internal/api/docs.go -o docs/

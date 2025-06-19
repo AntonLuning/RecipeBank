@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/AntonLuning/RecipeBank/internal/core/ai"
-	"github.com/AntonLuning/RecipeBank/internal/core/storage"
+	"github.com/AntonLuning/RecipeBank/internal/api/ai"
+	"github.com/AntonLuning/RecipeBank/internal/api/storage"
 	"github.com/AntonLuning/RecipeBank/pkg/models"
 )
 

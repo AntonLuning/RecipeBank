@@ -4,10 +4,10 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/AntonLuning/RecipeBank/internal/core"
-	"github.com/AntonLuning/RecipeBank/internal/core/ai"
-	"github.com/AntonLuning/RecipeBank/internal/core/service"
-	"github.com/AntonLuning/RecipeBank/internal/core/storage"
+	core "github.com/AntonLuning/RecipeBank/internal/api"
+	"github.com/AntonLuning/RecipeBank/internal/api/ai"
+	"github.com/AntonLuning/RecipeBank/internal/api/service"
+	"github.com/AntonLuning/RecipeBank/internal/api/storage"
 )
 
 func main() {

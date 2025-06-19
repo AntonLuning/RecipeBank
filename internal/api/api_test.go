@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/AntonLuning/RecipeBank/internal/core/service"
-	"github.com/AntonLuning/RecipeBank/internal/core/storage"
+	"github.com/AntonLuning/RecipeBank/internal/api/service"
+	"github.com/AntonLuning/RecipeBank/internal/api/storage"
 	"github.com/AntonLuning/RecipeBank/pkg/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

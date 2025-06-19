@@ -11,9 +11,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/AntonLuning/RecipeBank/internal/core/middleware"
-	"github.com/AntonLuning/RecipeBank/internal/core/service"
-	"github.com/AntonLuning/RecipeBank/internal/core/storage"
+	"github.com/AntonLuning/RecipeBank/internal/api/middleware"
+	"github.com/AntonLuning/RecipeBank/internal/api/service"
+	"github.com/AntonLuning/RecipeBank/internal/api/storage"
 	"github.com/AntonLuning/RecipeBank/pkg/models"
 	httpSwagger "github.com/swaggo/http-swagger"
 

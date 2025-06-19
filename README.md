@@ -16,14 +16,14 @@ A recipe management system with AI-powered features.
 # TODO
 - Docker deployment
 - Collect metrics with Prometheus (and show in Grafana)
-- Logging
+- Collect logs with Loki (and Promtail)
 
 ## Auth
 - Set up
 
-## Core
+## API
 - Use auth
 
 ## UI
-- Build home page
-- Recipe template page
+- Edit recipes
+- Better looking UI
