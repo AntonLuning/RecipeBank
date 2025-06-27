@@ -1,0 +1,29 @@
+# Git
+.git
+.gitignore
+.github/
+
+# Documentation
+README.md
+docs/
+
+# Test files
+*_test.go
+testdata/
+scripts/
+examples/
+
+# Build artifacts
+bin/
+
+# IDE files
+.vscode/
+.cursor/
+
+# Node modules
+node_modules/
+package-lock.json
+
+# Docker files (we don't need them in the image)
+Dockerfile*
+docker-compose* 

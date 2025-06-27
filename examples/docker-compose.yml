@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  mongodb:
+    container_name: recipe-bank-mongodb
+    image: mongo:latest
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongoadmin
+      MONGO_INITDB_ROOT_PASSWORD_FILE: /run/secrets/mongo_password
+    volumes:
+      - mongodb_data:/data/db
+    secrets:
+      - mongo_password
+    networks:
+      - recipebank
+
+  recipe-bank-api:
+    container_name: recipe-bank-api
+    image: recipe-bank-api:latest
+    restart: unless-stopped
+    depends_on:
+      - mongodb
+    environment:
+      RP_PORT: 9876
+      RP_DB_HOST: mongodb
+      RP_DB_PORT: 27017
+      RP_DB_USERNAME: mongoadmin
+      RP_DB_PASSWORD_FILE: /run/secrets/mongo_password
+      RP_DB_DATABASE: recipes_db
+      RP_AI_API_KEY_FILE: /run/secrets/openai_key
+    secrets:
+      - mongo_password
+      - openai_key
+    networks:
+      - recipebank
+
+  recipe-bank-ui:
+    container_name: recipe-bank-ui
+    image: recipe-bank-ui:latest
+    restart: unless-stopped
+    depends_on:
+      - recipe-bank-api
+    environment:
+      RP_UI_PORT: 9999
+      RP_UI_API_URL: http://recipe-bank-api:9876/api/v1
+    networks:
+      - recipebank
+
+volumes:
+  mongodb_data:
+    driver: local
+
+networks:
+  recipebank:
+    driver: bridge
+
+secrets:
+  mongo_password:
+    file: ../secrets/mongo_password
+  openai_key:
+    file: ../secrets/openai_key

@@ -14,7 +14,7 @@ func main() {
 	// Initialize Server
 	mux := http.NewServeMux()
 	ui.InitAssets(mux, cfg.AssetsPath, cfg.Debug)
-	ui.InitRoutes(mux, cfg.ApiURL)
+	ui.InitRoutes(mux, cfg.ApiURL())
 
 	// Start the server
 	fmt.Println("Starting UI server on", cfg.AppAddress())

@@ -25,9 +25,9 @@ type DatabaseConfig struct {
 	// Database host name (IP)
 	Host string `env:"HOST,required"`
 	// Database port
-	Port uint16 `env:"PORT" envDefault:"27017"`
+	Port uint16 `env:"PORT,required"`
 	// Database user name
-	Username string `env:"USERNAME" envDefault:"root"`
+	Username string `env:"USERNAME,required"`
 	// Database password (for the given user name)
 	Password string `env:"PASSWORD_FILE,required,file"`
 	// Database name
@@ -36,9 +36,9 @@ type DatabaseConfig struct {
 
 type AIConfig struct {
 	// AI provider
-	Provider string `env:"PROVIDER" envDefault:""`
+	Provider string `env:"PROVIDER" envDefault:"openai"`
 	// OpenAI API key
-	APIKey string `env:"API_KEY,required"`
+	APIKey string `env:"API_KEY_FILE,required,file"`
 	// OpenAI model
 	Model string `env:"MODEL" envDefault:"gpt-4.1-mini-2025-04-14"`
 }
