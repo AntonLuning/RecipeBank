@@ -1,10 +1,7 @@
-// templui component modal - version: v0.74.2 installed by templui v0.74.2
+// templui component modal - version: v0.80.2 installed by templui v0.80.2
 package modal
 
-import (
-	"github.com/AntonLuning/RecipeBank/internal/ui/utils"
-	"strconv"
-)
+import "github.com/AntonLuning/RecipeBank/internal/ui/utils"
 
 type Props struct {
 	ID               string
@@ -12,6 +9,7 @@ type Props struct {
 	Attributes       templ.Attributes
 	DisableClickAway bool
 	DisableESC       bool
+	InitialOpen      bool
 }
 
 type TriggerProps struct {
@@ -58,12 +56,19 @@ templ Modal(props ...Props) {
 	<div
 		id={ p.ID }
 		data-modal
-		data-disable-click-away={ strconv.FormatBool(p.DisableClickAway) }
-		data-disable-esc={ strconv.FormatBool(p.DisableESC) }
-		class="modal-container fixed inset-0 z-50 flex items-center justify-center overflow-y-auto opacity-0 transition-opacity duration-300 ease-out hidden"
+		class="modal-container fixed inset-0 z-50 items-center justify-center overflow-y-auto opacity-0 transition-opacity duration-300 ease-out hidden"
 		aria-labelledby={ p.ID + "-title" }
 		role="dialog"
 		aria-modal="true"
+		if p.DisableClickAway {
+			data-disable-click-away="true"
+		}
+		if p.DisableESC {
+			data-disable-esc="true"
+		}
+		if p.InitialOpen {
+			data-initial-open="true"
+		}
 		{ p.Attributes... }
 	>
 		<div data-modal-backdrop class="fixed inset-0 bg-background/70 bg-opacity-50" aria-hidden="true"></div>

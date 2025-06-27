@@ -1,4 +1,4 @@
-// templui component pagination - version: v0.74.2 installed by templui v0.74.2
+// templui component pagination - version: v0.80.2 installed by templui v0.80.2
 package pagination
 
 import (
@@ -32,9 +32,6 @@ type LinkProps struct {
 	Href       string
 	IsActive   bool
 	Disabled   bool
-	HxGet      string
-	HxTarget   string
-	HxSwap     string
 }
 
 type PreviousProps struct {
@@ -44,9 +41,6 @@ type PreviousProps struct {
 	Href       string
 	Disabled   bool
 	Label      string
-	HxGet      string
-	HxTarget   string
-	HxSwap     string
 }
 
 type NextProps struct {
@@ -56,9 +50,6 @@ type NextProps struct {
 	Href       string
 	Disabled   bool
 	Label      string
-	HxGet      string
-	HxTarget   string
-	HxSwap     string
 }
 
 templ Pagination(props ...Props) {
@@ -126,19 +117,6 @@ templ Link(props ...LinkProps) {
 		}) {
 			{ children... }
 		}
-	} else if p.HxGet != "" {
-		@button.Button(button.Props{
-			ID:         p.ID,
-			HxGet:      p.HxGet,
-			HxTarget:   p.HxTarget,
-			HxSwap:     p.HxSwap,
-			Size:       button.SizeIcon,
-			Variant:    button.Variant(buttonVariant(p.IsActive)),
-			Class:      p.Class,
-			Attributes: p.Attributes,
-		}) {
-			{ children... }
-		}
 	} else {
 		@button.Button(button.Props{
 			ID:         p.ID,
@@ -161,9 +139,6 @@ templ Previous(props ...PreviousProps) {
 	@button.Button(button.Props{
 		ID:         p.ID,
 		Href:       p.Href,
-		HxGet:      p.HxGet,
-		HxTarget:   p.HxTarget,
-		HxSwap:     p.HxSwap,
 		Disabled:   p.Disabled,
 		Variant:    button.VariantGhost,
 		Class:      utils.TwMerge("gap-1", p.Class),
@@ -184,9 +159,6 @@ templ Next(props ...NextProps) {
 	@button.Button(button.Props{
 		ID:         p.ID,
 		Href:       p.Href,
-		HxGet:      p.HxGet,
-		HxTarget:   p.HxTarget,
-		HxSwap:     p.HxSwap,
 		Disabled:   p.Disabled,
 		Variant:    button.VariantGhost,
 		Class:      utils.TwMerge("gap-1", p.Class),

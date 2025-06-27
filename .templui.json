@@ -2,5 +2,6 @@
   "componentsDir": "internal/ui/components",
   "utilsDir": "internal/ui/utils",
   "moduleName": "github.com/AntonLuning/RecipeBank",
-  "jsDir": "assets/js"
+  "jsDir": "assets/js",
+  "jsPublicPath": "/assets/js"
 }

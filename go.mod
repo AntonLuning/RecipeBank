@@ -6,7 +6,7 @@ toolchain go1.24.1
 
 require (
 	github.com/Oudwins/tailwind-merge-go v0.2.1
-	github.com/a-h/templ v0.3.898
+	github.com/a-h/templ v0.3.906
 	github.com/caarlos0/env/v11 v11.3.1
 	github.com/openai/openai-go v0.1.0-beta.10
 	github.com/stretchr/testify v1.10.0
