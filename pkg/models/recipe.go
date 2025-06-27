@@ -44,3 +44,9 @@ type RecipePage struct {
 	Limit      int      `json:"limit" example:"10"`
 	TotalPages int      `json:"total_pages" example:"10"`
 }
+
+// @Description Resource (ingredient, tag) with usage count
+type ResourceSummary struct {
+	Name  string `json:"name" example:"Flour"`
+	Count int    `json:"count" example:"15"` // Number of recipes using this ingredient
+}

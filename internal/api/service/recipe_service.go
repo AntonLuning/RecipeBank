@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"time"
+	"unicode"
 
 	"github.com/AntonLuning/RecipeBank/internal/api/ai"
 	"github.com/AntonLuning/RecipeBank/internal/api/storage"
@@ -35,7 +36,7 @@ func (s *RecipeService) GetRecipe(ctx context.Context, id string) (*models.Recip
 }
 
 func (s *RecipeService) GetRecipes(ctx context.Context, filter models.RecipeFilter, page int, limit int) (*models.RecipePage, error) {
-	// No validation here - storage layer handles default values
+	page, limit = s.validateAndNormalizePagination(page, limit)
 
 	recipes, err := s.storage.GetRecipes(ctx, filter, page, limit)
 	if err != nil {
@@ -45,12 +46,14 @@ func (s *RecipeService) GetRecipes(ctx context.Context, filter models.RecipeFilt
 }
 
 func (s *RecipeService) CreateRecipe(ctx context.Context, recipe *models.Recipe) (*models.Recipe, error) {
-	if err := validateRecipe(recipe); err != nil {
+	if err := s.validateRecipe(recipe); err != nil {
 		return nil, fmt.Errorf("%w: %s", ErrValidation, err.Error())
 	}
 
 	recipe.CreatedAt = time.Now()
 	recipe.UpdatedAt = recipe.CreatedAt
+
+	s.normalizeRecipe(recipe)
 
 	createdRecipe, err := s.storage.CreateRecipe(ctx, recipe)
 	if err != nil {
@@ -87,7 +90,7 @@ func (s *RecipeService) CreateRecipeFromImage(ctx context.Context, image string,
 		return nil, fmt.Errorf("%w: failed to create recipe from image: %w", ErrAI, err)
 	}
 
-	return s.CreateRecipe(ctx, newRecipeFromAnalysisResult(result))
+	return s.CreateRecipe(ctx, s.newRecipeFromAnalysisResult(result))
 }
 
 func (s *RecipeService) CreateRecipeFromURL(ctx context.Context, url string) (*models.Recipe, error) {
@@ -105,7 +108,7 @@ func (s *RecipeService) CreateRecipeFromURL(ctx context.Context, url string) (*m
 		return nil, fmt.Errorf("%w: failed to create recipe from URL: %w", ErrAI, err)
 	}
 
-	return s.CreateRecipe(ctx, newRecipeFromAnalysisResult(result))
+	return s.CreateRecipe(ctx, s.newRecipeFromAnalysisResult(result))
 }
 
 func (s *RecipeService) UpdateRecipe(ctx context.Context, id string, recipe *models.Recipe) (*models.Recipe, error) {
@@ -113,11 +116,13 @@ func (s *RecipeService) UpdateRecipe(ctx context.Context, id string, recipe *mod
 		return nil, fmt.Errorf("%w: invalid recipe ID", ErrInvalidInput)
 	}
 
-	if err := validateRecipe(recipe); err != nil {
+	if err := s.validateRecipe(recipe); err != nil {
 		return nil, fmt.Errorf("%w: %s", ErrValidation, err.Error())
 	}
 
 	recipe.UpdatedAt = time.Now()
+
+	s.normalizeRecipe(recipe)
 
 	updatedRecipe, err := s.storage.UpdateRecipe(ctx, id, recipe)
 	if err != nil {
@@ -134,10 +139,37 @@ func (s *RecipeService) DeleteRecipe(ctx context.Context, id string) error {
 	if err := s.storage.DeleteRecipe(ctx, id); err != nil {
 		return fmt.Errorf("failed to delete recipe: %w", err)
 	}
+
 	return nil
 }
 
-func validateRecipe(recipe *models.Recipe) error {
+func (s *RecipeService) GetIngredients(ctx context.Context, sort string) ([]models.ResourceSummary, error) {
+	if err := s.validateSortParameter(sort); err != nil {
+		return nil, fmt.Errorf("%w: %s", ErrValidation, err.Error())
+	}
+
+	ingredients, err := s.storage.GetIngredients(ctx, sort)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ingredients: %w", err)
+	}
+	return ingredients, nil
+}
+
+func (s *RecipeService) GetTags(ctx context.Context, sort string) ([]models.ResourceSummary, error) {
+	if err := s.validateSortParameter(sort); err != nil {
+		return nil, fmt.Errorf("%w: %s", ErrValidation, err.Error())
+	}
+
+	tags, err := s.storage.GetTags(ctx, sort)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get tags: %w", err)
+	}
+	return tags, nil
+}
+
+// Helper functions
+
+func (s *RecipeService) validateRecipe(recipe *models.Recipe) error {
 	if recipe == nil {
 		return fmt.Errorf("recipe cannot be nil")
 	}
@@ -191,7 +223,19 @@ func validateRecipe(recipe *models.Recipe) error {
 	return nil
 }
 
-func newRecipeFromAnalysisResult(result *ai.RecipeAnalysisResult) *models.Recipe {
+func (s *RecipeService) normalizeRecipe(recipe *models.Recipe) {
+	// Capitalize ingredients
+	for i, ingredient := range recipe.Ingredients {
+		recipe.Ingredients[i].Name = s.capitalize(ingredient.Name)
+	}
+
+	// Capitalize tags
+	for i, tag := range recipe.Tags {
+		recipe.Tags[i] = s.capitalize(tag)
+	}
+}
+
+func (s *RecipeService) newRecipeFromAnalysisResult(result *ai.RecipeAnalysisResult) *models.Recipe {
 	return &models.Recipe{
 		Title:       result.Title,
 		Description: result.Description,
@@ -200,4 +244,51 @@ func newRecipeFromAnalysisResult(result *ai.RecipeAnalysisResult) *models.Recipe
 		CookTime:    result.CookTime,
 		Servings:    result.Servings,
 	}
+}
+
+func (s *RecipeService) capitalize(str string) string {
+	if str == "" {
+		return str
+	}
+
+	// Get the first rune (Unicode-safe)
+	runes := []rune(str)
+	runes[0] = unicode.ToUpper(runes[0])
+
+	// Optional: lowercase the rest
+	for i := 1; i < len(runes); i++ {
+		runes[i] = unicode.ToLower(runes[i])
+	}
+
+	return string(runes)
+}
+
+func (s *RecipeService) validateSortParameter(sort string) error {
+	validSorts := map[string]bool{
+		"name_asc":   true,
+		"name_desc":  true,
+		"count_asc":  true,
+		"count_desc": true,
+	}
+
+	if !validSorts[sort] {
+		return fmt.Errorf("sort parameter must be one of: name_asc, name_desc, count_asc, count_desc")
+	}
+
+	return nil
+}
+
+func (s *RecipeService) validateAndNormalizePagination(page, limit int) (int, int) {
+	// Apply business rules for pagination
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 10
+	}
+	if limit > 100 {
+		limit = 100 // Maximum limit to prevent excessive data fetching
+	}
+
+	return page, limit
 }

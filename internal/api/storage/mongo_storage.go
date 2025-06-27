@@ -141,16 +141,6 @@ func (s *MongoStorage) GetRecipes(ctx context.Context, filter models.RecipeFilte
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 {
-		limit = 10
-	}
-	if limit > 100 {
-		limit = 100 // Maximum limit to prevent excessive data fetching
-	}
-
 	bsonFilter := bson.M{}
 	if filter.Title != "" {
 		bsonFilter["title"] = bson.M{"$regex": primitive.Regex{Pattern: filter.Title, Options: "i"}}
@@ -261,4 +251,108 @@ func (s *MongoStorage) DeleteRecipe(ctx context.Context, id string) error {
 	}
 
 	return nil
+}
+
+func (s *MongoStorage) GetIngredients(ctx context.Context, sort string) ([]models.ResourceSummary, error) {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	// Build aggregation pipeline
+	pipeline := []bson.M{
+		// Unwind the ingredients array
+		{"$unwind": "$ingredients"},
+		// Group by ingredient name and count occurrences
+		{
+			"$group": bson.M{
+				"_id":   "$ingredients.name",
+				"count": bson.M{"$sum": 1},
+			},
+		},
+		// Project to match our ResourceSummary model
+		{
+			"$project": bson.M{
+				"_id":        0,
+				"name":       "$_id",
+				"count":      1,
+				"name_upper": bson.M{"$toUpper": "$_id"}, // Convert to uppercase for sorting
+			},
+		},
+	}
+
+	// Add sort stage based on sort parameter
+	pipeline = append(pipeline, createSortStage(sort))
+
+	cursor, err := s.collection.Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to aggregate ingredients: %v", ErrDatabaseError, err)
+	}
+	defer cursor.Close(ctx)
+
+	var ingredients []models.ResourceSummary
+	if err = cursor.All(ctx, &ingredients); err != nil {
+		return nil, fmt.Errorf("%w: failed to decode ingredients: %v", ErrDatabaseError, err)
+	}
+
+	return ingredients, nil
+}
+
+func (s *MongoStorage) GetTags(ctx context.Context, sort string) ([]models.ResourceSummary, error) {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	// Build aggregation pipeline
+	pipeline := []bson.M{
+		// Unwind the tags array
+		{"$unwind": "$tags"},
+		// Group by tag name and count occurrences
+		{
+			"$group": bson.M{
+				"_id":   "$tags",
+				"count": bson.M{"$sum": 1},
+			},
+		},
+		// Project to match our ResourceSummary model
+		{
+			"$project": bson.M{
+				"_id":        0,
+				"name":       "$_id",
+				"count":      1,
+				"name_upper": bson.M{"$toUpper": "$_id"}, // Convert to uppercase for sorting
+			},
+		},
+	}
+
+	// Add sort stage based on sort parameter
+	pipeline = append(pipeline, createSortStage(sort))
+
+	cursor, err := s.collection.Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to aggregate tags: %v", ErrDatabaseError, err)
+	}
+	defer cursor.Close(ctx)
+
+	var tags []models.ResourceSummary
+	if err = cursor.All(ctx, &tags); err != nil {
+		return nil, fmt.Errorf("%w: failed to decode tags: %v", ErrDatabaseError, err)
+	}
+
+	return tags, nil
+}
+
+func createSortStage(sort string) bson.M {
+	var sortStage bson.M
+	switch sort {
+	case "name_asc":
+		sortStage = bson.M{"$sort": bson.M{"name_upper": 1}}
+	case "name_desc":
+		sortStage = bson.M{"$sort": bson.M{"name_upper": -1}}
+	case "count_asc":
+		sortStage = bson.M{"$sort": bson.M{"count": 1, "name_upper": 1}} // Secondary sort by name for deterministic results
+	case "count_desc":
+		sortStage = bson.M{"$sort": bson.M{"count": -1, "name_upper": 1}} // Secondary sort by name for deterministic results
+	default:
+		sortStage = bson.M{"$sort": bson.M{"name_upper": 1}}
+	}
+
+	return sortStage
 }

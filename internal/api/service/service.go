@@ -14,4 +14,6 @@ type Service interface {
 	CreateRecipeFromURL(ctx context.Context, url string) (*models.Recipe, error)
 	UpdateRecipe(ctx context.Context, id string, recipe *models.Recipe) (*models.Recipe, error)
 	DeleteRecipe(ctx context.Context, id string) error
+	GetIngredients(ctx context.Context, sort string) ([]models.ResourceSummary, error)
+	GetTags(ctx context.Context, sort string) ([]models.ResourceSummary, error)
 }

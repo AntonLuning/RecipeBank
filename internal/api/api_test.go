@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -88,6 +89,24 @@ func (m *MockService) UpdateRecipe(ctx context.Context, id string, recipe *model
 func (m *MockService) DeleteRecipe(ctx context.Context, id string) error {
 	args := m.Called(ctx, id)
 	return args.Error(0)
+}
+
+// GetIngredients mocks the GetIngredients method
+func (m *MockService) GetIngredients(ctx context.Context, sort string) ([]models.ResourceSummary, error) {
+	args := m.Called(ctx, sort)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.ResourceSummary), args.Error(1)
+}
+
+// GetTags mocks the GetTags method
+func (m *MockService) GetTags(ctx context.Context, sort string) ([]models.ResourceSummary, error) {
+	args := m.Called(ctx, sort)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.ResourceSummary), args.Error(1)
 }
 
 // TestHandleGetRecipeByID tests the handleGetRecipeByID method
@@ -716,6 +735,238 @@ func TestHandleDeleteRecipe(t *testing.T) {
 	})
 }
 
+// TestHandleGetIngredients tests the handleGetIngredients method
+func TestHandleGetIngredients(t *testing.T) {
+	mockService := new(MockService)
+	apiServer := NewAPIServer(":8080", mockService)
+
+	t.Run("Success - Default Sort", func(t *testing.T) {
+		// Create expected domain response
+		expectedIngredients := []models.ResourceSummary{
+			{Name: "Flour", Count: 15},
+			{Name: "Sugar", Count: 12},
+			{Name: "Butter", Count: 8},
+		}
+
+		// Set up the mock service
+		mockService.On("GetIngredients", mock.Anything, "name_asc").Return(expectedIngredients, nil).Once()
+
+		// Create a test request
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/recipe/ingredients", nil)
+		w := httptest.NewRecorder()
+
+		// Call the handler
+		apiServer.mux.ServeHTTP(w, req)
+
+		// Check the response
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		// Parse the response body
+		var response map[string]interface{}
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		require.NoError(t, err)
+
+		// Check the response data
+		data, ok := response["data"].(map[string]interface{})
+		require.True(t, ok)
+		resources, ok := data["resources"].([]interface{})
+		require.True(t, ok)
+		assert.Equal(t, 3, len(resources))
+		assert.Equal(t, float64(3), data["total"])
+
+		mockService.AssertExpectations(t)
+	})
+
+	t.Run("Success - With Sort Parameter", func(t *testing.T) {
+		// Create expected domain response sorted by count descending
+		expectedIngredients := []models.ResourceSummary{
+			{Name: "Flour", Count: 15},
+			{Name: "Sugar", Count: 12},
+			{Name: "Butter", Count: 8},
+		}
+
+		// Set up the mock service
+		mockService.On("GetIngredients", mock.Anything, "count_desc").Return(expectedIngredients, nil).Once()
+
+		// Create a test request with sort parameter
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/recipe/ingredients?sort=count_desc", nil)
+		w := httptest.NewRecorder()
+
+		// Call the handler
+		apiServer.mux.ServeHTTP(w, req)
+
+		// Check the response
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		mockService.AssertExpectations(t)
+	})
+
+	t.Run("Invalid Sort Parameter", func(t *testing.T) {
+		// Mock service should return validation error for invalid sort parameter
+		mockService.On("GetIngredients", mock.Anything, "invalid_sort").Return(
+			[]models.ResourceSummary(nil),
+			fmt.Errorf("%w: sort parameter must be one of: name_asc, name_desc, count_asc, count_desc", service.ErrValidation),
+		).Once()
+
+		// Create a test request with invalid sort parameter
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/recipe/ingredients?sort=invalid_sort", nil)
+		w := httptest.NewRecorder()
+
+		// Call the handler
+		apiServer.mux.ServeHTTP(w, req)
+
+		// Check the response
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+
+		// Parse the response body
+		var response map[string]interface{}
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		require.NoError(t, err)
+
+		// Check error response - validation error from service layer
+		assert.Equal(t, false, response["success"])
+		errorObj, ok := response["error"].(map[string]interface{})
+		require.True(t, ok)
+		assert.Equal(t, "validation_error", errorObj["code"])
+		assert.Contains(t, errorObj["message"], "sort parameter must be one of")
+
+		mockService.AssertExpectations(t)
+	})
+
+	t.Run("Service Error", func(t *testing.T) {
+		// Set up the mock service to return an error
+		mockService.On("GetIngredients", mock.Anything, "name_asc").Return([]models.ResourceSummary(nil), errors.New("service error")).Once()
+
+		// Create a test request
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/recipe/ingredients", nil)
+		w := httptest.NewRecorder()
+
+		// Call the handler
+		apiServer.mux.ServeHTTP(w, req)
+
+		// Check the response
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+
+		mockService.AssertExpectations(t)
+	})
+}
+
+// TestHandleGetTags tests the handleGetTags method
+func TestHandleGetTags(t *testing.T) {
+	mockService := new(MockService)
+	apiServer := NewAPIServer(":8080", mockService)
+
+	t.Run("Success - Default Sort", func(t *testing.T) {
+		// Create expected domain response
+		expectedTags := []models.ResourceSummary{
+			{Name: "breakfast", Count: 25},
+			{Name: "dessert", Count: 18},
+			{Name: "vegetarian", Count: 12},
+		}
+
+		// Set up the mock service
+		mockService.On("GetTags", mock.Anything, "name_asc").Return(expectedTags, nil).Once()
+
+		// Create a test request
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/recipe/tags", nil)
+		w := httptest.NewRecorder()
+
+		// Call the handler
+		apiServer.mux.ServeHTTP(w, req)
+
+		// Check the response
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		// Parse the response body
+		var response map[string]interface{}
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		require.NoError(t, err)
+
+		// Check the response data
+		data, ok := response["data"].(map[string]interface{})
+		require.True(t, ok)
+		resources, ok := data["resources"].([]interface{})
+		require.True(t, ok)
+		assert.Equal(t, 3, len(resources))
+		assert.Equal(t, float64(3), data["total"])
+
+		mockService.AssertExpectations(t)
+	})
+
+	t.Run("Success - With Sort Parameter", func(t *testing.T) {
+		// Create expected domain response sorted by name descending
+		expectedTags := []models.ResourceSummary{
+			{Name: "vegetarian", Count: 12},
+			{Name: "dessert", Count: 18},
+			{Name: "breakfast", Count: 25},
+		}
+
+		// Set up the mock service
+		mockService.On("GetTags", mock.Anything, "name_desc").Return(expectedTags, nil).Once()
+
+		// Create a test request with sort parameter
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/recipe/tags?sort=name_desc", nil)
+		w := httptest.NewRecorder()
+
+		// Call the handler
+		apiServer.mux.ServeHTTP(w, req)
+
+		// Check the response
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		mockService.AssertExpectations(t)
+	})
+
+	t.Run("Invalid Sort Parameter", func(t *testing.T) {
+		// Mock service should return validation error for invalid sort parameter
+		mockService.On("GetTags", mock.Anything, "unknown").Return(
+			[]models.ResourceSummary(nil),
+			fmt.Errorf("%w: sort parameter must be one of: name_asc, name_desc, count_asc, count_desc", service.ErrValidation),
+		).Once()
+
+		// Create a test request with invalid sort parameter
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/recipe/tags?sort=unknown", nil)
+		w := httptest.NewRecorder()
+
+		// Call the handler
+		apiServer.mux.ServeHTTP(w, req)
+
+		// Check the response
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+
+		// Parse the response body
+		var response map[string]interface{}
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		require.NoError(t, err)
+
+		// Check error response - validation error from service layer
+		assert.Equal(t, false, response["success"])
+		errorObj, ok := response["error"].(map[string]interface{})
+		require.True(t, ok)
+		assert.Equal(t, "validation_error", errorObj["code"])
+		assert.Contains(t, errorObj["message"], "sort parameter must be one of")
+
+		mockService.AssertExpectations(t)
+	})
+
+	t.Run("Service Error", func(t *testing.T) {
+		// Set up the mock service to return an error
+		mockService.On("GetTags", mock.Anything, "name_asc").Return([]models.ResourceSummary(nil), errors.New("service error")).Once()
+
+		// Create a test request
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/recipe/tags", nil)
+		w := httptest.NewRecorder()
+
+		// Call the handler
+		apiServer.mux.ServeHTTP(w, req)
+
+		// Check the response
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+
+		mockService.AssertExpectations(t)
+	})
+}
+
 func TestResponseWriters(t *testing.T) {
 	t.Run("writeSuccessResponse", func(t *testing.T) {
 		w := httptest.NewRecorder()
@@ -847,6 +1098,63 @@ func TestParseIntParam(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, tc.expected, result)
+			}
+		})
+	}
+}
+
+func TestParseGetResourcesQueryParams(t *testing.T) {
+	tests := []struct {
+		name        string
+		queryString string
+		expected    string
+		expectError bool
+	}{
+		{
+			name:        "valid sort parameter - name_asc",
+			queryString: "?sort=name_asc",
+			expected:    "name_asc",
+			expectError: false,
+		},
+		{
+			name:        "valid sort parameter - count_desc",
+			queryString: "?sort=count_desc",
+			expected:    "count_desc",
+			expectError: false,
+		},
+		{
+			name:        "no sort parameter - uses default",
+			queryString: "",
+			expected:    "name_asc",
+			expectError: false,
+		},
+		{
+			name:        "empty sort parameter - uses default",
+			queryString: "?sort=",
+			expected:    "name_asc",
+			expectError: false,
+		},
+		{
+			name:        "invalid sort parameter - no validation at API layer",
+			queryString: "?sort=invalid_sort",
+			expected:    "invalid_sort", // API layer just parses, validation happens in service layer
+			expectError: false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/test"+tc.queryString, nil)
+			result, err := parseGetResourcesQueryParams(req)
+
+			if tc.expectError {
+				assert.Error(t, err)
+				assert.Nil(t, result)
+				assert.ErrorIs(t, errors.Unwrap(err), ErrInvalidQueryParams)
+			} else {
+				assert.NoError(t, err)
+				require.NotNil(t, result)
+				assert.Equal(t, tc.expected, result.Sort)
 			}
 		})
 	}

@@ -36,6 +36,11 @@ type CreateRecipeFromUrlRequest struct {
 	URL string `json:"url" example:"https://example.com/recipe"` // URL to a webpage with recipe or to an image of a recipe
 }
 
+// @Description Query parameters for retrieving resources (ingredients, tags)
+type GetResourcesQuery struct {
+	Sort string `json:"sort,omitempty" example:"name_asc"` // Options: "name_asc", "name_desc", "count_asc", "count_desc"
+}
+
 // Response models
 
 // @Description Standard API response wrapper
@@ -43,6 +48,12 @@ type APIResponse struct {
 	Success bool      `json:"success" example:"true"`
 	Data    any       `json:"data,omitempty"`
 	Error   *APIError `json:"error,omitempty"`
+}
+
+// @Description Resources (ingredients, tags) list response
+type ResourcesResponse struct {
+	Resources []ResourceSummary `json:"resources"`
+	Total     int               `json:"total" example:"42"` // Total number of unique resources
 }
 
 // @Description API error information

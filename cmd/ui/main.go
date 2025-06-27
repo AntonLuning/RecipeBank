@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -17,7 +16,7 @@ func main() {
 	ui.InitRoutes(mux, cfg.ApiURL())
 
 	// Start the server
-	fmt.Println("Starting UI server on", cfg.AppAddress())
+	slog.Info("Starting UI server", "address", cfg.AppAddress(), "api_url", cfg.ApiURL())
 	if err := http.ListenAndServe(cfg.AppAddress(), mux); err != nil {
 		slog.Error("Unable to run UI server", "error", err.Error())
 	}

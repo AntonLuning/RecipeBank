@@ -2,8 +2,29 @@ package pages
 
 import (
 	"github.com/AntonLuning/RecipeBank/internal/ui/components/input"
+	"github.com/AntonLuning/RecipeBank/internal/ui/components/label"
 	"github.com/AntonLuning/RecipeBank/internal/ui/components/modal"
+	"github.com/AntonLuning/RecipeBank/internal/ui/components/popover"
+	"github.com/AntonLuning/RecipeBank/internal/ui/components/selectbox"
 )
+
+templ AlpineAjaxReInitTemplUIScript() {
+	<script>
+		// Helper function to re-initialize templUI components
+		function initTemplUIComponents(element = document) {
+			if (window.templUI) {
+				Object.values(window.templUI).forEach(comp => {
+					comp.initAllComponents?.(element);
+				});
+			}
+		}
+
+		// Re-initialize templUI components after Alpine AJAX merged event
+		document.body.addEventListener("ajax:merged", (e) => {
+			initTemplUIComponents(e.target);
+		});
+	</script>
+}
 
 templ BaseLayout(title string) {
 	<!DOCTYPE html>
@@ -16,12 +37,16 @@ templ BaseLayout(title string) {
 			<script defer src="https://cdn.jsdelivr.net/npm/@imacrayon/alpine-ajax@0.12.2/dist/cdn.min.js"></script>
 			<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
 			@input.Script()
+			@label.Script()
 			@modal.Script()
+			@selectbox.Script()
+			@popover.Script()
 		</head>
 		<body class="bg-background text-foreground min-h-screen">
 			<div class="container mx-auto px-4 py-8">
 				{ children... }
 			</div>
 		</body>
+		@AlpineAjaxReInitTemplUIScript()
 	</html>
 } 

@@ -770,3 +770,313 @@ func TestUpdateRecipeWithImage(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, updateRecipe.Image, retrieved.Image)
 }
+
+func TestGetIngredients(t *testing.T) {
+	storage, cleanup := createTestStorage(t)
+	defer cleanup()
+
+	// Create test recipes with various ingredients
+	recipes := []*models.Recipe{
+		{
+			Title:       "Pasta Recipe",
+			Description: "Simple pasta",
+			Ingredients: []models.Ingredient{
+				{Name: "Pasta", Quantity: 200, Unit: "g"},
+				{Name: "Cheese", Quantity: 50, Unit: "g"},
+			},
+			Steps:    []string{"Cook pasta", "Add cheese"},
+			CookTime: 15,
+			Servings: 2,
+		},
+		{
+			Title:       "Salad Recipe",
+			Description: "Fresh salad",
+			Ingredients: []models.Ingredient{
+				{Name: "Lettuce", Quantity: 100, Unit: "g"},
+				{Name: "Tomato", Quantity: 2, Unit: "pieces"},
+				{Name: "Cheese", Quantity: 30, Unit: "g"}, // Cheese appears again
+			},
+			Steps:    []string{"Mix vegetables", "Add cheese"},
+			CookTime: 5,
+			Servings: 1,
+		},
+		{
+			Title:       "Pizza Recipe",
+			Description: "Homemade pizza",
+			Ingredients: []models.Ingredient{
+				{Name: "Flour", Quantity: 300, Unit: "g"},
+				{Name: "Cheese", Quantity: 100, Unit: "g"}, // Cheese appears third time
+				{Name: "Tomato", Quantity: 1, Unit: "can"}, // Tomato appears again
+			},
+			Steps:    []string{"Make dough", "Add toppings", "Bake"},
+			CookTime: 30,
+			Servings: 4,
+		},
+	}
+
+	// Create all recipes
+	for _, r := range recipes {
+		_, err := storage.CreateRecipe(context.Background(), r)
+		require.NoError(t, err)
+	}
+
+	testCases := []struct {
+		name     string
+		sort     string
+		expected []models.ResourceSummary
+	}{
+		{
+			name: "Sort by name ascending",
+			sort: "name_asc",
+			expected: []models.ResourceSummary{
+				{Name: "Cheese", Count: 3},  // Appears in all 3 recipes
+				{Name: "Flour", Count: 1},   // Appears in 1 recipe
+				{Name: "Lettuce", Count: 1}, // Appears in 1 recipe
+				{Name: "Pasta", Count: 1},   // Appears in 1 recipe
+				{Name: "Tomato", Count: 2},  // Appears in 2 recipes
+			},
+		},
+		{
+			name: "Sort by name descending",
+			sort: "name_desc",
+			expected: []models.ResourceSummary{
+				{Name: "Tomato", Count: 2},
+				{Name: "Pasta", Count: 1},
+				{Name: "Lettuce", Count: 1},
+				{Name: "Flour", Count: 1},
+				{Name: "Cheese", Count: 3},
+			},
+		},
+		{
+			name: "Sort by count ascending",
+			sort: "count_asc",
+			expected: []models.ResourceSummary{
+				{Name: "Flour", Count: 1},
+				{Name: "Lettuce", Count: 1},
+				{Name: "Pasta", Count: 1},
+				{Name: "Tomato", Count: 2},
+				{Name: "Cheese", Count: 3},
+			},
+		},
+		{
+			name: "Sort by count descending",
+			sort: "count_desc",
+			expected: []models.ResourceSummary{
+				{Name: "Cheese", Count: 3},
+				{Name: "Tomato", Count: 2},
+				{Name: "Flour", Count: 1}, // Count 1 items sorted alphabetically by name
+				{Name: "Lettuce", Count: 1},
+				{Name: "Pasta", Count: 1},
+			},
+		},
+		{
+			name: "Default sort (name_asc)",
+			sort: "",
+			expected: []models.ResourceSummary{
+				{Name: "Cheese", Count: 3},
+				{Name: "Flour", Count: 1},
+				{Name: "Lettuce", Count: 1},
+				{Name: "Pasta", Count: 1},
+				{Name: "Tomato", Count: 2},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := storage.GetIngredients(context.Background(), tc.sort)
+			require.NoError(t, err)
+
+			// Verify the results match expectations
+			require.Equal(t, len(tc.expected), len(result), "Expected %d ingredients, got %d", len(tc.expected), len(result))
+
+			for i, expected := range tc.expected {
+				assert.Equal(t, expected.Name, result[i].Name, "Ingredient %d name mismatch", i)
+				assert.Equal(t, expected.Count, result[i].Count, "Ingredient %d count mismatch", i)
+			}
+		})
+	}
+}
+
+func TestGetTags(t *testing.T) {
+	storage, cleanup := createTestStorage(t)
+	defer cleanup()
+
+	// Create test recipes with various tags
+	recipes := []*models.Recipe{
+		{
+			Title:       "Pasta Recipe",
+			Description: "Simple pasta",
+			Ingredients: []models.Ingredient{
+				{Name: "Pasta", Quantity: 200, Unit: "g"},
+			},
+			Steps:    []string{"Cook pasta"},
+			CookTime: 15,
+			Servings: 2,
+			Tags:     []string{"italian", "quick", "vegetarian"},
+		},
+		{
+			Title:       "Pizza Recipe",
+			Description: "Homemade pizza",
+			Ingredients: []models.Ingredient{
+				{Name: "Flour", Quantity: 300, Unit: "g"},
+			},
+			Steps:    []string{"Make dough", "Bake"},
+			CookTime: 30,
+			Servings: 4,
+			Tags:     []string{"italian", "baking"}, // italian appears again
+		},
+		{
+			Title:       "Stir Fry Recipe",
+			Description: "Quick stir fry",
+			Ingredients: []models.Ingredient{
+				{Name: "Vegetables", Quantity: 400, Unit: "g"},
+			},
+			Steps:    []string{"Stir fry"},
+			CookTime: 10,
+			Servings: 2,
+			Tags:     []string{"quick", "asian", "vegetarian"}, // quick and vegetarian appear again
+		},
+	}
+
+	// Create all recipes
+	for _, r := range recipes {
+		_, err := storage.CreateRecipe(context.Background(), r)
+		require.NoError(t, err)
+	}
+
+	testCases := []struct {
+		name     string
+		sort     string
+		expected []models.ResourceSummary
+	}{
+		{
+			name: "Sort by name ascending",
+			sort: "name_asc",
+			expected: []models.ResourceSummary{
+				{Name: "asian", Count: 1},      // Appears in 1 recipe
+				{Name: "baking", Count: 1},     // Appears in 1 recipe
+				{Name: "italian", Count: 2},    // Appears in 2 recipes
+				{Name: "quick", Count: 2},      // Appears in 2 recipes
+				{Name: "vegetarian", Count: 2}, // Appears in 2 recipes
+			},
+		},
+		{
+			name: "Sort by name descending",
+			sort: "name_desc",
+			expected: []models.ResourceSummary{
+				{Name: "vegetarian", Count: 2},
+				{Name: "quick", Count: 2},
+				{Name: "italian", Count: 2},
+				{Name: "baking", Count: 1},
+				{Name: "asian", Count: 1},
+			},
+		},
+		{
+			name: "Sort by count ascending",
+			sort: "count_asc",
+			expected: []models.ResourceSummary{
+				{Name: "asian", Count: 1},
+				{Name: "baking", Count: 1},
+				{Name: "italian", Count: 2},
+				{Name: "quick", Count: 2},
+				{Name: "vegetarian", Count: 2},
+			},
+		},
+		{
+			name: "Sort by count descending",
+			sort: "count_desc",
+			expected: []models.ResourceSummary{
+				{Name: "italian", Count: 2},
+				{Name: "quick", Count: 2},
+				{Name: "vegetarian", Count: 2},
+				{Name: "asian", Count: 1},
+				{Name: "baking", Count: 1},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := storage.GetTags(context.Background(), tc.sort)
+			require.NoError(t, err)
+
+			// Verify the results match expectations
+			require.Equal(t, len(tc.expected), len(result), "Expected %d tags, got %d", len(tc.expected), len(result))
+
+			for i, expected := range tc.expected {
+				assert.Equal(t, expected.Name, result[i].Name, "Tag %d name mismatch", i)
+				assert.Equal(t, expected.Count, result[i].Count, "Tag %d count mismatch", i)
+			}
+		})
+	}
+}
+
+func TestGetIngredientsEmptyCollection(t *testing.T) {
+	storage, cleanup := createTestStorage(t)
+	defer cleanup()
+
+	// Test with empty collection
+	result, err := storage.GetIngredients(context.Background(), "name_asc")
+	require.NoError(t, err)
+	assert.Empty(t, result)
+}
+
+func TestGetTagsEmptyCollection(t *testing.T) {
+	storage, cleanup := createTestStorage(t)
+	defer cleanup()
+
+	// Test with empty collection
+	result, err := storage.GetTags(context.Background(), "name_asc")
+	require.NoError(t, err)
+	assert.Empty(t, result)
+}
+
+func TestGetIngredientsWithNoIngredients(t *testing.T) {
+	storage, cleanup := createTestStorage(t)
+	defer cleanup()
+
+	// Create a recipe with no ingredients (edge case)
+	recipe := &models.Recipe{
+		Title:       "No Ingredients Recipe",
+		Description: "Strange recipe with no ingredients",
+		Ingredients: []models.Ingredient{}, // Empty ingredients
+		Steps:       []string{"Do nothing"},
+		CookTime:    0,
+		Servings:    1,
+	}
+
+	_, err := storage.CreateRecipe(context.Background(), recipe)
+	require.NoError(t, err)
+
+	// Should return empty result since there are no ingredients
+	result, err := storage.GetIngredients(context.Background(), "name_asc")
+	require.NoError(t, err)
+	assert.Empty(t, result)
+}
+
+func TestGetTagsWithNoTags(t *testing.T) {
+	storage, cleanup := createTestStorage(t)
+	defer cleanup()
+
+	// Create a recipe with no tags
+	recipe := &models.Recipe{
+		Title:       "No Tags Recipe",
+		Description: "Recipe with no tags",
+		Ingredients: []models.Ingredient{
+			{Name: "Something", Quantity: 1, Unit: "unit"},
+		},
+		Steps:    []string{"Do something"},
+		CookTime: 10,
+		Servings: 1,
+		Tags:     []string{}, // Empty tags
+	}
+
+	_, err := storage.CreateRecipe(context.Background(), recipe)
+	require.NoError(t, err)
+
+	// Should return empty result since there are no tags
+	result, err := storage.GetTags(context.Background(), "name_asc")
+	require.NoError(t, err)
+	assert.Empty(t, result)
+}

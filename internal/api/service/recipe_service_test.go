@@ -72,6 +72,24 @@ func (m *MockStorage) Close(ctx context.Context) error {
 	return args.Error(0)
 }
 
+// GetIngredients mocks the GetIngredients method
+func (m *MockStorage) GetIngredients(ctx context.Context, sort string) ([]models.ResourceSummary, error) {
+	args := m.Called(ctx, sort)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.ResourceSummary), args.Error(1)
+}
+
+// GetTags mocks the GetTags method
+func (m *MockStorage) GetTags(ctx context.Context, sort string) ([]models.ResourceSummary, error) {
+	args := m.Called(ctx, sort)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.ResourceSummary), args.Error(1)
+}
+
 // TestGetRecipe tests the GetRecipe method
 func TestGetRecipe(t *testing.T) {
 	mockStorage := new(MockStorage)
@@ -160,7 +178,7 @@ func TestGetRecipes(t *testing.T) {
 	})
 
 	t.Run("Zero Page and Limit", func(t *testing.T) {
-		// Storage should handle default values for page and limit
+		// Service layer now handles default values for page and limit
 		expectedPage := &models.RecipePage{
 			Recipes:    []models.Recipe{},
 			Total:      0,
@@ -169,7 +187,8 @@ func TestGetRecipes(t *testing.T) {
 			TotalPages: 0,
 		}
 
-		mockStorage.On("GetRecipes", ctx, filter, 0, 0).Return(expectedPage, nil).Once()
+		// Service layer normalizes 0,0 to 1,10 before calling storage
+		mockStorage.On("GetRecipes", ctx, filter, 1, 10).Return(expectedPage, nil).Once()
 
 		page, err := recipeService.GetRecipes(ctx, filter, 0, 0)
 
@@ -705,5 +724,125 @@ func TestCreateRecipeWithImage(t *testing.T) {
 		assert.Nil(t, createdRecipe)
 		assert.Contains(t, err.Error(), "invalid image")
 		assert.ErrorIs(t, errors.Unwrap(err), ErrValidation)
+	})
+}
+
+// TestGetIngredients tests the GetIngredients method
+func TestGetIngredients(t *testing.T) {
+	mockStorage := new(MockStorage)
+	recipeService := NewRecipeService(mockStorage, nil)
+	ctx := context.Background()
+
+	t.Run("Success", func(t *testing.T) {
+		expectedIngredients := []models.ResourceSummary{
+			{Name: "Flour", Count: 15},
+			{Name: "Sugar", Count: 12},
+			{Name: "Butter", Count: 8},
+		}
+
+		mockStorage.On("GetIngredients", ctx, "name_asc").Return(expectedIngredients, nil).Once()
+
+		ingredients, err := recipeService.GetIngredients(ctx, "name_asc")
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedIngredients, ingredients)
+		mockStorage.AssertExpectations(t)
+	})
+
+	t.Run("Success with count desc sort", func(t *testing.T) {
+		expectedIngredients := []models.ResourceSummary{
+			{Name: "Flour", Count: 15},
+			{Name: "Sugar", Count: 12},
+			{Name: "Butter", Count: 8},
+		}
+
+		mockStorage.On("GetIngredients", ctx, "count_desc").Return(expectedIngredients, nil).Once()
+
+		ingredients, err := recipeService.GetIngredients(ctx, "count_desc")
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedIngredients, ingredients)
+		mockStorage.AssertExpectations(t)
+	})
+
+	t.Run("Validation Error - Invalid Sort", func(t *testing.T) {
+		ingredients, err := recipeService.GetIngredients(ctx, "invalid_sort")
+
+		assert.Error(t, err)
+		assert.Nil(t, ingredients)
+		assert.ErrorIs(t, errors.Unwrap(err), ErrValidation)
+		assert.Contains(t, err.Error(), "sort parameter must be one of")
+	})
+
+	t.Run("Storage Error", func(t *testing.T) {
+		expectedErr := errors.New("database error")
+		mockStorage.On("GetIngredients", ctx, "name_asc").Return([]models.ResourceSummary(nil), expectedErr).Once()
+
+		ingredients, err := recipeService.GetIngredients(ctx, "name_asc")
+
+		assert.Error(t, err)
+		assert.Nil(t, ingredients)
+		assert.Contains(t, err.Error(), "failed to get ingredients")
+		mockStorage.AssertExpectations(t)
+	})
+}
+
+// TestGetTags tests the GetTags method
+func TestGetTags(t *testing.T) {
+	mockStorage := new(MockStorage)
+	recipeService := NewRecipeService(mockStorage, nil)
+	ctx := context.Background()
+
+	t.Run("Success", func(t *testing.T) {
+		expectedTags := []models.ResourceSummary{
+			{Name: "dessert", Count: 25},
+			{Name: "vegetarian", Count: 18},
+			{Name: "quick", Count: 12},
+		}
+
+		mockStorage.On("GetTags", ctx, "name_asc").Return(expectedTags, nil).Once()
+
+		tags, err := recipeService.GetTags(ctx, "name_asc")
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedTags, tags)
+		mockStorage.AssertExpectations(t)
+	})
+
+	t.Run("Success with name desc sort", func(t *testing.T) {
+		expectedTags := []models.ResourceSummary{
+			{Name: "vegetarian", Count: 18},
+			{Name: "quick", Count: 12},
+			{Name: "dessert", Count: 25},
+		}
+
+		mockStorage.On("GetTags", ctx, "name_desc").Return(expectedTags, nil).Once()
+
+		tags, err := recipeService.GetTags(ctx, "name_desc")
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedTags, tags)
+		mockStorage.AssertExpectations(t)
+	})
+
+	t.Run("Validation Error - Invalid Sort", func(t *testing.T) {
+		tags, err := recipeService.GetTags(ctx, "invalid_sort")
+
+		assert.Error(t, err)
+		assert.Nil(t, tags)
+		assert.ErrorIs(t, errors.Unwrap(err), ErrValidation)
+		assert.Contains(t, err.Error(), "sort parameter must be one of")
+	})
+
+	t.Run("Storage Error", func(t *testing.T) {
+		expectedErr := errors.New("database error")
+		mockStorage.On("GetTags", ctx, "name_asc").Return([]models.ResourceSummary(nil), expectedErr).Once()
+
+		tags, err := recipeService.GetTags(ctx, "name_asc")
+
+		assert.Error(t, err)
+		assert.Nil(t, tags)
+		assert.Contains(t, err.Error(), "failed to get tags")
+		mockStorage.AssertExpectations(t)
 	})
 }

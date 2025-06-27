@@ -2,91 +2,218 @@ package components
 
 
 import (
+	"net/url"
+	"strconv"
+	"strings"
+
 	"github.com/AntonLuning/RecipeBank/pkg/models"
 	"github.com/AntonLuning/RecipeBank/internal/ui/components/badge"
 	"github.com/AntonLuning/RecipeBank/internal/ui/components/button"
 	"github.com/AntonLuning/RecipeBank/internal/ui/components/card"
+	"github.com/AntonLuning/RecipeBank/internal/ui/components/form"
+	"github.com/AntonLuning/RecipeBank/internal/ui/components/input"
 	"github.com/AntonLuning/RecipeBank/internal/ui/components/pagination"
+	"github.com/AntonLuning/RecipeBank/internal/ui/components/selectbox"
 	"github.com/AntonLuning/RecipeBank/internal/ui/components/skeleton"
 )
 
 type RecipesPageData struct {
 	RecipePage  *models.RecipePage
 	Error       string
-	SearchQuery map[string][]string
+	Filter 	    models.RecipeFilter
 }
 
 templ RecipesOverviewLoading() {
 	<div id="recipes-overview" x-init="$ajax('/partial/recipes')">
-		@recipeFilters(nil)
+		@recipeFilters(models.RecipeFilter{})
 		@recipeSkeletonGrid()
 	</div>
 }
 
 templ RecipesOverview(data RecipesPageData) {
 	<div id="recipes-overview">
-		@recipeFilters(data.SearchQuery)
+		@recipeFilters(data.Filter)
 		if data.Error != "" {
 			@errorState(data.Error)
 		} else {
 			@recipeGrid(data.RecipePage.Recipes)
 			if data.RecipePage != nil && data.RecipePage.TotalPages > 1 {
-				@recipePagination(data.RecipePage, data.SearchQuery)
+				@recipePagination(data.RecipePage, data.Filter)
 			}
 		}
 	</div>
 }
 
-templ recipeFilters(searchQuery map[string][]string) {
+templ recipeFilters(filter models.RecipeFilter) {
 	@card.Card(card.Props{Class: "mb-8"}) {
 		@card.Content() {
 			<form method="GET" action="/partial/recipes" x-target="recipes-overview">
 				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-					<div>
-						<label for="title" class="block text-sm font-medium text-foreground mb-2">Recipe Title</label>
-						<input 
-							id="title"
-							name="title"
-							type="text" 
-							value={ GetQueryValue(searchQuery, "title") }
-							placeholder="Search by title..."
-							class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-						>
-					</div>
-					<div>
-						<label for="ingredient_names" class="block text-sm font-medium text-foreground mb-2">Ingredients</label>
-						<input 
-							id="ingredient_names"
-							name="ingredient_names"
-							type="text" 
-							value={ GetQueryValue(searchQuery, "ingredient_names") }
-							placeholder="e.g. flour,sugar,eggs"
-							class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-						>
-					</div>
-					<div>
-						<label for="cook_time" class="block text-sm font-medium text-foreground mb-2">Cook Time (min)</label>
-						<input 
-							id="cook_time"
-							name="cook_time"
-							type="number" 
-							value={ GetQueryValue(searchQuery, "cook_time") }
-							placeholder="e.g. 30"
-							min="1"
-							class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-						>
-					</div>
-					<div>
-						<label for="tags" class="block text-sm font-medium text-foreground mb-2">Tags</label>
-						<input 
-							id="tags"
-							name="tags"
-							type="text" 
-							value={ GetQueryValue(searchQuery, "tags") }
-							placeholder="e.g. dessert,quick,vegetarian"
-							class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-						>
-					</div>
+					@form.Item() {
+						@form.Label(form.LabelProps{For: "title"}) {
+							Recipe Title
+						}
+						@input.Input(input.Props{
+							ID:          "title",
+							Name:        "title",
+							Type:        input.TypeText,
+							Value:       filter.Title,
+							Placeholder: "Search by title...",
+						})
+					}
+					@form.Item() {
+						@form.Label(form.LabelProps{For: "ingredient_names"}) {
+							Ingredients
+						}
+						@selectbox.SelectBox() {
+							@selectbox.Trigger(selectbox.TriggerProps{
+								ID:        "ingredient_names",
+								Name:      "ingredient_names",
+								ShowPills: true,
+							}) {
+								@selectbox.Value(selectbox.ValueProps{
+									Placeholder: "Select ingredients...",
+								})
+							}
+							@selectbox.Content() {
+								@selectbox.Group() {
+									@selectbox.Label() {
+										Common Ingredients
+									}
+									@selectbox.Item(selectbox.ItemProps{
+										Value: "flour",
+									}) {
+										Flour
+									}
+									@selectbox.Item(selectbox.ItemProps{
+										Value: "sugar",
+									}) {
+										Sugar
+									}
+									@selectbox.Item(selectbox.ItemProps{
+										Value: "eggs",
+									}) {
+										Eggs
+									}
+									@selectbox.Item(selectbox.ItemProps{
+										Value: "butter",
+									}) {
+										Butter
+									}
+									@selectbox.Item(selectbox.ItemProps{
+										Value: "milk",
+									}) {
+										Milk
+									}
+									@selectbox.Item(selectbox.ItemProps{
+										Value: "salt",
+									}) {
+										Salt
+									}
+									@selectbox.Item(selectbox.ItemProps{
+										Value: "pepper",
+									}) {
+										Pepper
+									}
+									@selectbox.Item(selectbox.ItemProps{
+										Value: "onion",
+									}) {
+										Onion
+									}
+									@selectbox.Item(selectbox.ItemProps{
+										Value: "garlic",
+									}) {
+										Garlic
+									}
+								}
+							}
+						}
+					}
+					@form.Item() {
+						@form.Label(form.LabelProps{For: "cook_time"}) {
+							Cook Time (min)
+						}
+						@input.Input(input.Props{
+							ID:          "cook_time",
+							Name:        "cook_time",
+							Type:        input.TypeNumber,
+							Value:       func() string { if filter.CookTime > 0 { return strconv.Itoa(filter.CookTime) }; return "" }(),
+							Placeholder: "e.g. 30",
+						})
+					}
+					@form.Item() {
+						@form.Label(form.LabelProps{For: "tags"}) {
+							Tags
+						}
+						@selectbox.SelectBox() {
+							@selectbox.Trigger(selectbox.TriggerProps{
+								ID:        "tags",
+								Name:      "tags",
+								ShowPills: true,
+							}) {
+								@selectbox.Value(selectbox.ValueProps{
+									Placeholder: "Select tags...",
+								})
+							}
+							@selectbox.Content() {
+								@selectbox.Group() {
+									@selectbox.Label() {
+										Recipe Categories
+									}
+									@selectbox.Item(selectbox.ItemProps{
+										Value: "dessert",
+									}) {
+										Dessert
+									}
+									@selectbox.Item(selectbox.ItemProps{
+										Value: "vegetarian",
+									}) {
+										Vegetarian
+									}
+									@selectbox.Item(selectbox.ItemProps{
+										Value: "vegan",
+									}) {
+										Vegan
+									}
+									@selectbox.Item(selectbox.ItemProps{
+										Value: "quick",
+									}) {
+										Quick
+									}
+									@selectbox.Item(selectbox.ItemProps{
+										Value: "healthy",
+									}) {
+										Healthy
+									}
+									@selectbox.Item(selectbox.ItemProps{
+										Value: "comfort",
+									}) {
+										Comfort Food
+									}
+									@selectbox.Item(selectbox.ItemProps{
+										Value: "appetizer",
+									}) {
+										Appetizer
+									}
+									@selectbox.Item(selectbox.ItemProps{
+										Value: "main",
+									}) {
+										Main Course
+									}
+									@selectbox.Item(selectbox.ItemProps{
+										Value: "side",
+									}) {
+										Side Dish
+									}
+									@selectbox.Item(selectbox.ItemProps{
+										Value: "spicy",
+									}) {
+										Spicy
+									}
+								}
+							}
+						}
+					}
 					<div class="flex items-end">
 						@button.Button(button.Props{
 							Type: "submit",
@@ -229,13 +356,13 @@ templ errorState(errorMsg string) {
 	}
 }
 
-templ recipePagination(recipePage *models.RecipePage, searchQuery map[string][]string) {
+templ recipePagination(recipePage *models.RecipePage, filter models.RecipeFilter) {
 	@pagination.Pagination(pagination.Props{Class: "mt-8"}) {
 		@pagination.Content() {
 			if recipePage.Page > 1 {
 				@pagination.Item() {
 					@pagination.Previous(pagination.PreviousProps{
-                        Href:  "/partial/recipes?" + BuildPaginationQueryString(recipePage.Page - 1, searchQuery),
+                        Href:  "/partial/recipes?" + BuildPaginationQueryString(recipePage.Page - 1, filter),
                         Label: "Previous",
 						Attributes: templ.Attributes{
 							"x-target": "recipes-overview",
@@ -256,7 +383,7 @@ templ recipePagination(recipePage *models.RecipePage, searchQuery map[string][]s
 				} else if ShouldShowPage(i, recipePage.Page, recipePage.TotalPages) {
 					@pagination.Item() {
 						@pagination.Link(pagination.LinkProps{
-							Href: "/partial/recipes?" + BuildPaginationQueryString(i, searchQuery),
+							Href: "/partial/recipes?" + BuildPaginationQueryString(i, filter),
 							Attributes: templ.Attributes{
 								"x-target": "recipes-overview",
 							},
@@ -270,7 +397,7 @@ templ recipePagination(recipePage *models.RecipePage, searchQuery map[string][]s
 			if recipePage.Page < recipePage.TotalPages {
 				@pagination.Item() {
 					@pagination.Next(pagination.NextProps{
-						Href:  "/partial/recipes?" + BuildPaginationQueryString(recipePage.Page + 1, searchQuery),
+						Href:  "/partial/recipes?" + BuildPaginationQueryString(recipePage.Page + 1, filter),
 						Label: "Next",
 						Attributes: templ.Attributes{
 							"x-target": "recipes-overview",
@@ -318,3 +445,39 @@ templ recipeSkeletonCard() {
 	}
 }
 
+// Helper functions
+
+func BuildPaginationQueryString(page int, filter models.RecipeFilter) string {
+	params := url.Values{}
+	params.Set("page", strconv.Itoa(page))
+
+	// Add existing search parameters
+	if filter.Title != "" {
+		params.Set("title", filter.Title)
+	}
+	if len(filter.IngredientNames) > 0 {
+		params.Set("ingredient_names", strings.Join(filter.IngredientNames, ","))
+	}
+	if filter.CookTime > 0 {
+		params.Set("cook_time", strconv.Itoa(filter.CookTime))
+	}
+	if len(filter.Tags) > 0 {
+		params.Set("tags", strings.Join(filter.Tags, ","))
+	}
+
+	return params.Encode()
+}
+
+func ShouldShowPage(page, currentPage, totalPages int) bool {
+	// Always show first and last page
+	if page == 1 || page == totalPages {
+		return true
+	}
+
+	// Show pages within 2 of current page
+	if page >= currentPage-2 && page <= currentPage+2 {
+		return true
+	}
+
+	return false
+}

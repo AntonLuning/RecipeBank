@@ -58,7 +58,12 @@ func (c *AppConfig) ApiURL() string {
 	url := strings.TrimSuffix(c.API.URL, "/")
 
 	// If URL already contains a path, ignore BasePath
-	if strings.Contains(strings.TrimPrefix(url, "http://"), "/") || strings.Contains(strings.TrimPrefix(url, "https://"), "/") {
+	parts := strings.Split(url, "://")
+	host := parts[0]
+	if len(parts) > 1 {
+		host = parts[1]
+	}
+	if strings.Contains(host, "/") {
 		return url
 	}
 

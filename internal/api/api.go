@@ -57,13 +57,18 @@ func (s *APIServer) Run() error {
 func (s *APIServer) v1Mux() http.Handler {
 	v1Mux := http.NewServeMux()
 
+	// Recipe endpoints
 	v1Mux.HandleFunc("GET /recipe", makeHTTPHandlerFunc(s.handleGetRecipes))
 	v1Mux.HandleFunc("GET /recipe/{id}", makeHTTPHandlerFunc(s.handleGetRecipeByID))
 	v1Mux.HandleFunc("POST /recipe", makeHTTPHandlerFunc(s.handlePostRecipe))
 	v1Mux.HandleFunc("PUT /recipe/{id}", makeHTTPHandlerFunc(s.handlePutRecipe))
 	v1Mux.HandleFunc("DELETE /recipe/{id}", makeHTTPHandlerFunc(s.handleDeleteRecipe))
 
-	// AI-powered recipe creation
+	// Recipe resource endpoints
+	v1Mux.HandleFunc("GET /recipe/ingredients", makeHTTPHandlerFunc(s.handleGetIngredients))
+	v1Mux.HandleFunc("GET /recipe/tags", makeHTTPHandlerFunc(s.handleGetTags))
+
+	// AI-powered recipe creation endpoints
 	v1Mux.HandleFunc("POST /recipe/ai/from-image", makeHTTPHandlerFunc(s.handlePostRecipeFromImage))
 	v1Mux.HandleFunc("POST /recipe/ai/from-url", makeHTTPHandlerFunc(s.handlePostRecipeFromURL))
 
@@ -87,8 +92,8 @@ func (s *APIServer) v1Mux() http.Handler {
 // @Failure 500 {object} models.APIResponse{error=models.APIError} "Internal server error"
 // @Router /recipe [get]
 func (s *APIServer) handleGetRecipes(w http.ResponseWriter, r *http.Request) error {
-	var query models.GetRecipesQuery
-	if err := s.parseQueryParams(r, &query); err != nil {
+	query, err := s.parseGetRecipesQueryParams(r)
+	if err != nil {
 		return err
 	}
 
@@ -262,6 +267,66 @@ func (s *APIServer) handlePostRecipeFromURL(w http.ResponseWriter, r *http.Reque
 	return writeSuccessResponse(w, http.StatusCreated, recipe)
 }
 
+// GetIngredients godoc
+// @Summary Get all ingredients
+// @Description Get a list of all unique ingredients across all recipes with usage counts
+// @Tags resources
+// @Accept json
+// @Produce json
+// @Param sort query string false "Sort order" Enums(name_asc, name_desc, count_asc, count_desc) default(name_asc)
+// @Success 200 {object} models.APIResponse{data=models.IngredientsResponse} "Successful response"
+// @Failure 400 {object} models.APIResponse{error=models.APIError} "Invalid query parameters"
+// @Failure 500 {object} models.APIResponse{error=models.APIError} "Internal server error"
+// @Router /recipe/ingredients [get]
+func (s *APIServer) handleGetIngredients(w http.ResponseWriter, r *http.Request) error {
+	query, err := parseGetResourcesQueryParams(r)
+	if err != nil {
+		return err
+	}
+
+	ingredients, err := s.service.GetIngredients(r.Context(), query.Sort)
+	if err != nil {
+		return err
+	}
+
+	response := models.ResourcesResponse{
+		Resources: ingredients,
+		Total:     len(ingredients),
+	}
+
+	return writeSuccessResponse(w, http.StatusOK, response)
+}
+
+// GetTags godoc
+// @Summary Get all tags
+// @Description Get a list of all unique tags across all recipes with usage counts
+// @Tags resources
+// @Accept json
+// @Produce json
+// @Param sort query string false "Sort order" Enums(name_asc, name_desc, count_asc, count_desc) default(name_asc)
+// @Success 200 {object} models.APIResponse{data=models.TagsResponse} "Successful response"
+// @Failure 400 {object} models.APIResponse{error=models.APIError} "Invalid query parameters"
+// @Failure 500 {object} models.APIResponse{error=models.APIError} "Internal server error"
+// @Router /recipe/tags [get]
+func (s *APIServer) handleGetTags(w http.ResponseWriter, r *http.Request) error {
+	query, err := parseGetResourcesQueryParams(r)
+	if err != nil {
+		return err
+	}
+
+	tags, err := s.service.GetTags(r.Context(), query.Sort)
+	if err != nil {
+		return err
+	}
+
+	response := models.ResourcesResponse{
+		Resources: tags,
+		Total:     len(tags),
+	}
+
+	return writeSuccessResponse(w, http.StatusOK, response)
+}
+
 func makeHTTPHandlerFunc(apiFn apiFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := apiFn(w, r); err != nil {
@@ -349,19 +414,20 @@ func writeErrorResponse(ctx context.Context, w http.ResponseWriter, status int, 
 	})
 }
 
-func (s *APIServer) parseQueryParams(r *http.Request, query *models.GetRecipesQuery) error {
+func (s *APIServer) parseGetRecipesQueryParams(r *http.Request) (*models.GetRecipesQuery, error) {
 	q := r.URL.Query()
+	var query models.GetRecipesQuery
 
 	// Parse pagination parameters with helper function
 	var err error
 	query.Page, err = parseIntParam(q, "page", 1)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	query.Limit, err = parseIntParam(q, "limit", 10)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Parse filter parameters
@@ -371,7 +437,7 @@ func (s *APIServer) parseQueryParams(r *http.Request, query *models.GetRecipesQu
 
 	filter.CookTime, err = parseIntParam(q, "cook_time", 0)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if ingredients := q.Get("ingredients"); ingredients != "" {
@@ -384,7 +450,7 @@ func (s *APIServer) parseQueryParams(r *http.Request, query *models.GetRecipesQu
 
 	query.Filter = filter
 
-	return nil
+	return &query, nil
 }
 
 func parseIntParam(q url.Values, key string, defaultValue int) (int, error) {
@@ -399,6 +465,16 @@ func parseIntParam(q url.Values, key string, defaultValue int) (int, error) {
 	}
 
 	return val, nil
+}
+
+func parseGetResourcesQueryParams(r *http.Request) (*models.GetResourcesQuery, error) {
+	var query models.GetResourcesQuery
+	query.Sort = r.URL.Query().Get("sort")
+	if query.Sort == "" {
+		query.Sort = "name_asc"
+	}
+
+	return &query, nil
 }
 
 // Helper functions for extracting user-safe error details

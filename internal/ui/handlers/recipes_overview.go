@@ -3,7 +3,9 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/AntonLuning/RecipeBank/internal/ui/pages/components"
@@ -51,9 +53,9 @@ func GetRecipesOverviewPartial(apiURL string) http.HandlerFunc {
 		if err != nil {
 			// Handle error - render page with error state
 			component := components.RecipesOverview(components.RecipesPageData{
-				RecipePage:  nil,
-				Error:       err.Error(),
-				SearchQuery: r.URL.Query(),
+				RecipePage: nil,
+				Error:      err.Error(),
+				Filter:     createFilterFromQuery(r.URL.Query()),
 			})
 			if renderErr := component.Render(r.Context(), w); renderErr != nil {
 				http.Error(w, "Failed to render page", http.StatusInternalServerError)
@@ -63,9 +65,9 @@ func GetRecipesOverviewPartial(apiURL string) http.HandlerFunc {
 
 		// Render page with recipes
 		component := components.RecipesOverview(components.RecipesPageData{
-			RecipePage:  recipePage,
-			Error:       "",
-			SearchQuery: r.URL.Query(),
+			RecipePage: recipePage,
+			Error:      "",
+			Filter:     createFilterFromQuery(r.URL.Query()),
 		})
 		if err := component.Render(r.Context(), w); err != nil {
 			http.Error(w, "Failed to render page", http.StatusInternalServerError)
@@ -76,9 +78,23 @@ func GetRecipesOverviewPartial(apiURL string) http.HandlerFunc {
 
 func fetchRecipesFromAPI(apiBaseURL string, apiEndpoint string) (*models.RecipePage, error) {
 	recipePage, err := fetchFromAPI[models.RecipePage](apiBaseURL, apiEndpoint)
-	time.Sleep(100 * time.Millisecond) // For user experience when perfroming lazy loading (avoiding flash of content)
+	time.Sleep(250 * time.Millisecond) // For user experience when perfroming lazy loading (avoiding flash of content)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch recipes: %w", err)
 	}
 	return recipePage, nil
+}
+
+func createFilterFromQuery(query url.Values) models.RecipeFilter {
+	cookTime, err := strconv.Atoi(query.Get("cook_time"))
+	if err != nil {
+		cookTime = 0
+	}
+
+	return models.RecipeFilter{
+		Title:           query.Get("title"),
+		IngredientNames: strings.Split(query.Get("ingredient_names"), ","),
+		CookTime:        cookTime,
+		Tags:            strings.Split(query.Get("tags"), ","),
+	}
 }
