@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"regexp"
 	"time"
 
 	"github.com/AntonLuning/RecipeBank/pkg/models"
@@ -143,21 +144,38 @@ func (s *MongoStorage) GetRecipes(ctx context.Context, filter models.RecipeFilte
 
 	bsonFilter := bson.M{}
 	if filter.Title != "" {
-		bsonFilter["title"] = bson.M{"$regex": primitive.Regex{Pattern: filter.Title, Options: "i"}}
+		bsonFilter["title"] = bson.M{"$regex": primitive.Regex{Pattern: regexp.QuoteMeta(filter.Title), Options: "i"}}
 	}
 	if len(filter.IngredientNames) > 0 {
 		var ingredientQueries []bson.M
 		for _, name := range filter.IngredientNames {
-			ingredientQuery := bson.M{"ingredients.name": bson.M{"$regex": primitive.Regex{Pattern: name, Options: "i"}}}
-			ingredientQueries = append(ingredientQueries, ingredientQuery)
+			if name != "" { // Additional safety check
+				ingredientQuery := bson.M{"ingredients.name": bson.M{"$regex": primitive.Regex{Pattern: regexp.QuoteMeta(name), Options: "i"}}}
+				ingredientQueries = append(ingredientQueries, ingredientQuery)
+			}
 		}
-		bsonFilter["$and"] = ingredientQueries
+		if len(ingredientQueries) > 0 {
+			bsonFilter["$and"] = ingredientQueries
+		}
 	}
 	if filter.CookTime > 0 {
 		bsonFilter["cook_time"] = bson.M{"$lte": filter.CookTime}
 	}
 	if len(filter.Tags) > 0 {
-		bsonFilter["tags"] = bson.M{"$all": filter.Tags}
+		var tagQueries []bson.M
+		for _, tag := range filter.Tags {
+			if tag != "" { // Additional safety check
+				tagQuery := bson.M{"tags": bson.M{"$regex": primitive.Regex{Pattern: "^" + regexp.QuoteMeta(tag) + "$", Options: "i"}}}
+				tagQueries = append(tagQueries, tagQuery)
+			}
+		}
+		if len(tagQueries) > 0 {
+			if existingAnd, exists := bsonFilter["$and"]; exists {
+				bsonFilter["$and"] = append(existingAnd.([]bson.M), tagQueries...)
+			} else {
+				bsonFilter["$and"] = tagQueries
+			}
+		}
 	}
 
 	total, err := s.collection.CountDocuments(ctx, bsonFilter)

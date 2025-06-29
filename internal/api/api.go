@@ -433,20 +433,27 @@ func (s *APIServer) parseGetRecipesQueryParams(r *http.Request) (*models.GetReci
 	// Parse filter parameters
 	var filter models.RecipeFilter
 
-	filter.Title = q.Get("title")
+	filter.Title, err = url.QueryUnescape(q.Get("title"))
+	if err != nil {
+		return nil, fmt.Errorf("%w: title parameter contains invalid URL encoding", ErrInvalidQueryParams)
+	}
 
 	filter.CookTime, err = parseIntParam(q, "cook_time", 0)
 	if err != nil {
 		return nil, err
 	}
 
-	if ingredients := q.Get("ingredients"); ingredients != "" {
-		filter.IngredientNames = strings.Split(ingredients, ",")
+	ingredients, err := url.QueryUnescape(q.Get("ingredients"))
+	if err != nil {
+		return nil, fmt.Errorf("%w: ingredients parameter contains invalid URL encoding", ErrInvalidQueryParams)
 	}
+	filter.IngredientNames = parseStringArray(ingredients)
 
-	if tags := q.Get("tags"); tags != "" {
-		filter.Tags = strings.Split(tags, ",")
+	tags, err := url.QueryUnescape(q.Get("tags"))
+	if err != nil {
+		return nil, fmt.Errorf("%w: tags parameter contains invalid URL encoding", ErrInvalidQueryParams)
 	}
+	filter.Tags = parseStringArray(tags)
 
 	query.Filter = filter
 
@@ -467,9 +474,30 @@ func parseIntParam(q url.Values, key string, defaultValue int) (int, error) {
 	return val, nil
 }
 
+func parseStringArray(input string) []string {
+	if input == "" {
+		return []string{}
+	}
+
+	parts := strings.Split(input, ",")
+	var result []string
+	for _, part := range parts {
+		trimmed := strings.TrimSpace(part)
+		if trimmed != "" {
+			result = append(result, trimmed)
+		}
+	}
+	return result
+}
+
 func parseGetResourcesQueryParams(r *http.Request) (*models.GetResourcesQuery, error) {
 	var query models.GetResourcesQuery
-	query.Sort = r.URL.Query().Get("sort")
+	var err error
+
+	query.Sort, err = url.QueryUnescape(r.URL.Query().Get("sort"))
+	if err != nil {
+		return nil, fmt.Errorf("%w: sort parameter contains invalid URL encoding", ErrInvalidQueryParams)
+	}
 	if query.Sort == "" {
 		query.Sort = "name_asc"
 	}

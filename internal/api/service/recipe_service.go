@@ -3,10 +3,12 @@ package service
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 	"unicode"
 
 	"github.com/AntonLuning/RecipeBank/internal/api/ai"
+	"github.com/AntonLuning/RecipeBank/internal/api/middleware"
 	"github.com/AntonLuning/RecipeBank/internal/api/storage"
 	"github.com/AntonLuning/RecipeBank/pkg/models"
 )
@@ -145,7 +147,8 @@ func (s *RecipeService) DeleteRecipe(ctx context.Context, id string) error {
 
 func (s *RecipeService) GetIngredients(ctx context.Context, sort string) ([]models.ResourceSummary, error) {
 	if err := s.validateSortParameter(sort); err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrValidation, err.Error())
+		slog.Error("Invalid sort parameter, using default sort name_asc", "request_id", middleware.GetRequestID(ctx), "sort_parameter", sort, "error", err.Error())
+		sort = "name_asc"
 	}
 
 	ingredients, err := s.storage.GetIngredients(ctx, sort)
@@ -157,7 +160,8 @@ func (s *RecipeService) GetIngredients(ctx context.Context, sort string) ([]mode
 
 func (s *RecipeService) GetTags(ctx context.Context, sort string) ([]models.ResourceSummary, error) {
 	if err := s.validateSortParameter(sort); err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrValidation, err.Error())
+		slog.Error("Invalid sort parameter, using default sort name_asc", "request_id", middleware.GetRequestID(ctx), "sort_parameter", sort, "error", err.Error())
+		sort = "name_asc"
 	}
 
 	tags, err := s.storage.GetTags(ctx, sort)

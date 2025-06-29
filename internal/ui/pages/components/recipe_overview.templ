@@ -17,37 +17,62 @@ import (
 	"github.com/AntonLuning/RecipeBank/internal/ui/components/skeleton"
 )
 
-type RecipesPageData struct {
+type RecipesGridData struct {
 	RecipePage  *models.RecipePage
 	Error       string
-	Filter 	    models.RecipeFilter
+}
+
+type FilterData struct {
+	AvailableIngredients []string
+	AvailableTags   	 []string
 }
 
 templ RecipesOverviewLoading() {
-	<div id="recipes-overview" x-init="$ajax('/partial/recipes')">
-		@recipeFilters(models.RecipeFilter{})
+	<div id="recipes-overview" x-init="$ajax('/partial/recipes-overview')">
+		@recipeFilters(&FilterData{})
 		@recipeSkeletonGrid()
 	</div>
 }
 
-templ RecipesOverview(data RecipesPageData) {
+templ RecipesOverview(filterData *FilterData, recipeData *RecipesGridData, filter *models.RecipeFilter) {
 	<div id="recipes-overview">
-		@recipeFilters(data.Filter)
+		@recipeFilters(filterData)
+		@RecipeGrid(recipeData, filter)
+	</div>
+}
+
+templ RecipeGrid(data *RecipesGridData, filter *models.RecipeFilter) {
+	<div id="recipes-grid">
 		if data.Error != "" {
 			@errorState(data.Error)
 		} else {
-			@recipeGrid(data.RecipePage.Recipes)
+			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+				if len(data.RecipePage.Recipes) == 0 {
+					<div class="col-span-full text-center py-8">
+						<div class="text-muted-foreground mb-4">
+							<svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+							</svg>
+						</div>
+						<p class="text-muted-foreground">No recipes found. Try adjusting your search criteria or start adding new recipes.</p>
+					</div>
+				} else {
+					for _, recipe := range data.RecipePage.Recipes {
+						@recipeCard(recipe)
+					}
+				}
+			</div>
 			if data.RecipePage != nil && data.RecipePage.TotalPages > 1 {
-				@recipePagination(data.RecipePage, data.Filter)
+				@recipePagination(data.RecipePage, filter)
 			}
 		}
 	</div>
 }
 
-templ recipeFilters(filter models.RecipeFilter) {
+templ recipeFilters(filter *FilterData) {
 	@card.Card(card.Props{Class: "mb-8"}) {
 		@card.Content() {
-			<form method="GET" action="/partial/recipes" x-target="recipes-overview">
+			<form method="GET" action="/partial/recipes" x-target="recipes-grid">
 				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
 					@form.Item() {
 						@form.Label(form.LabelProps{For: "title"}) {
@@ -57,7 +82,6 @@ templ recipeFilters(filter models.RecipeFilter) {
 							ID:          "title",
 							Name:        "title",
 							Type:        input.TypeText,
-							Value:       filter.Title,
 							Placeholder: "Search by title...",
 						})
 					}
@@ -76,54 +100,11 @@ templ recipeFilters(filter models.RecipeFilter) {
 								})
 							}
 							@selectbox.Content() {
-								@selectbox.Group() {
-									@selectbox.Label() {
-										Common Ingredients
-									}
+								for _, ingredient := range filter.AvailableIngredients {
 									@selectbox.Item(selectbox.ItemProps{
-										Value: "flour",
+										Value: strings.ToLower(ingredient),
 									}) {
-										Flour
-									}
-									@selectbox.Item(selectbox.ItemProps{
-										Value: "sugar",
-									}) {
-										Sugar
-									}
-									@selectbox.Item(selectbox.ItemProps{
-										Value: "eggs",
-									}) {
-										Eggs
-									}
-									@selectbox.Item(selectbox.ItemProps{
-										Value: "butter",
-									}) {
-										Butter
-									}
-									@selectbox.Item(selectbox.ItemProps{
-										Value: "milk",
-									}) {
-										Milk
-									}
-									@selectbox.Item(selectbox.ItemProps{
-										Value: "salt",
-									}) {
-										Salt
-									}
-									@selectbox.Item(selectbox.ItemProps{
-										Value: "pepper",
-									}) {
-										Pepper
-									}
-									@selectbox.Item(selectbox.ItemProps{
-										Value: "onion",
-									}) {
-										Onion
-									}
-									@selectbox.Item(selectbox.ItemProps{
-										Value: "garlic",
-									}) {
-										Garlic
+										{ ingredient }
 									}
 								}
 							}
@@ -137,7 +118,6 @@ templ recipeFilters(filter models.RecipeFilter) {
 							ID:          "cook_time",
 							Name:        "cook_time",
 							Type:        input.TypeNumber,
-							Value:       func() string { if filter.CookTime > 0 { return strconv.Itoa(filter.CookTime) }; return "" }(),
 							Placeholder: "e.g. 30",
 						})
 					}
@@ -156,59 +136,11 @@ templ recipeFilters(filter models.RecipeFilter) {
 								})
 							}
 							@selectbox.Content() {
-								@selectbox.Group() {
-									@selectbox.Label() {
-										Recipe Categories
-									}
+								for _, tag := range filter.AvailableTags {
 									@selectbox.Item(selectbox.ItemProps{
-										Value: "dessert",
+										Value: strings.ToLower(tag),
 									}) {
-										Dessert
-									}
-									@selectbox.Item(selectbox.ItemProps{
-										Value: "vegetarian",
-									}) {
-										Vegetarian
-									}
-									@selectbox.Item(selectbox.ItemProps{
-										Value: "vegan",
-									}) {
-										Vegan
-									}
-									@selectbox.Item(selectbox.ItemProps{
-										Value: "quick",
-									}) {
-										Quick
-									}
-									@selectbox.Item(selectbox.ItemProps{
-										Value: "healthy",
-									}) {
-										Healthy
-									}
-									@selectbox.Item(selectbox.ItemProps{
-										Value: "comfort",
-									}) {
-										Comfort Food
-									}
-									@selectbox.Item(selectbox.ItemProps{
-										Value: "appetizer",
-									}) {
-										Appetizer
-									}
-									@selectbox.Item(selectbox.ItemProps{
-										Value: "main",
-									}) {
-										Main Course
-									}
-									@selectbox.Item(selectbox.ItemProps{
-										Value: "side",
-									}) {
-										Side Dish
-									}
-									@selectbox.Item(selectbox.ItemProps{
-										Value: "spicy",
-									}) {
-										Spicy
+										{ tag }
 									}
 								}
 							}
@@ -226,25 +158,6 @@ templ recipeFilters(filter models.RecipeFilter) {
 			</form>
 		}
 	}
-}
-
-templ recipeGrid(recipes []models.Recipe) {
-	<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-		if len(recipes) == 0 {
-			<div class="col-span-full text-center py-8">
-				<div class="text-muted-foreground mb-4">
-					<svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-					</svg>
-				</div>
-				<p class="text-muted-foreground">No recipes found. Try adjusting your search criteria.</p>
-			</div>
-		} else {
-			for _, recipe := range recipes {
-				@recipeCard(recipe)
-			}
-		}
-	</div>
 }
 
 templ recipeCard(recipe models.Recipe) {
@@ -356,7 +269,7 @@ templ errorState(errorMsg string) {
 	}
 }
 
-templ recipePagination(recipePage *models.RecipePage, filter models.RecipeFilter) {
+templ recipePagination(recipePage *models.RecipePage, filter *models.RecipeFilter) {
 	@pagination.Pagination(pagination.Props{Class: "mt-8"}) {
 		@pagination.Content() {
 			if recipePage.Page > 1 {
@@ -365,7 +278,7 @@ templ recipePagination(recipePage *models.RecipePage, filter models.RecipeFilter
                         Href:  "/partial/recipes?" + BuildPaginationQueryString(recipePage.Page - 1, filter),
                         Label: "Previous",
 						Attributes: templ.Attributes{
-							"x-target": "recipes-overview",
+							"x-target": "recipes-grid",
 						},
                     })
 				}
@@ -385,7 +298,7 @@ templ recipePagination(recipePage *models.RecipePage, filter models.RecipeFilter
 						@pagination.Link(pagination.LinkProps{
 							Href: "/partial/recipes?" + BuildPaginationQueryString(i, filter),
 							Attributes: templ.Attributes{
-								"x-target": "recipes-overview",
+								"x-target": "recipes-grid",
 							},
 						}) {
 							{ FormatPageNumber(i) }
@@ -400,7 +313,7 @@ templ recipePagination(recipePage *models.RecipePage, filter models.RecipeFilter
 						Href:  "/partial/recipes?" + BuildPaginationQueryString(recipePage.Page + 1, filter),
 						Label: "Next",
 						Attributes: templ.Attributes{
-							"x-target": "recipes-overview",
+							"x-target": "recipes-grid",
 						},
 					})
 				}
@@ -447,7 +360,7 @@ templ recipeSkeletonCard() {
 
 // Helper functions
 
-func BuildPaginationQueryString(page int, filter models.RecipeFilter) string {
+func BuildPaginationQueryString(page int, filter *models.RecipeFilter) string {
 	params := url.Values{}
 	params.Set("page", strconv.Itoa(page))
 
