@@ -1,9 +1,14 @@
 package pages
 
 import (
+	"fmt"
+	"strconv"
+
 	"github.com/AntonLuning/RecipeBank/pkg/models"
 	"github.com/AntonLuning/RecipeBank/internal/ui/components/card"
 	"github.com/AntonLuning/RecipeBank/internal/ui/components/button"
+	"github.com/AntonLuning/RecipeBank/internal/ui/components/badge"
+	"github.com/AntonLuning/RecipeBank/internal/ui/components/icon"
 	"github.com/AntonLuning/RecipeBank/internal/ui/pages/components"
 )
 
@@ -23,160 +28,214 @@ templ RecipePage(data RecipePageData) {
 }
 
 templ recipeDetail(recipe *models.Recipe) {
-	<div class="max-w-4xl mx-auto">
-		<!-- Header section with title and back button -->
-		<div class="mb-6">
-			@button.Button(button.Props{
-				Href: "/",
-				Class: "mb-4",
-				Variant: "outline",
-			}) {
-				← Back to Recipes
-			}
-			<h1 class="text-4xl font-bold text-foreground mb-2">{ recipe.Title }</h1>
-			if recipe.Description != "" {
-				<p class="text-lg text-muted-foreground">{ recipe.Description }</p>
-			}
-		</div>
+	<div class="min-h-screen bg-background">
+		<div class="max-w-6xl mx-auto px-4 py-12">
+			@recipeHeader(recipe)
 
-		<!-- Recipe info and image -->
-		<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-			<!-- Image -->
-			<div>
-				@card.Card(card.Props{}) {
-					<div class="aspect-w-16 aspect-h-12">
-						<img 
-							src={ components.GetRecipeImageSrc(recipe.Image) }
-							alt={ recipe.Title }
-							class="w-full h-80 object-cover rounded-lg"
-							onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDQwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xNjggMTUwQzE2OCAxMzMuNDMxIDE4MS40MzEgMTIwIDE5OCAxMjBDMjE0LjU2OSAxMjAgMjI4IDEzMy40MzEgMjI4IDE1MEMyMjggMTY2LjU2OSAyMTQuNTY5IDE4MCAyMTQgMTgwQzE4MS40MzEgMTgwIDE2OCAxNjYuNTY5IDE2OCAxNTBaIiBmaWxsPSIjOUNBM0FGIi8+CjxwYXRoIGQ9Ik0xMzYgMjAwTDE2OC42ODYzIDE2Ny4zMTRDMTc0LjkzNSAxNjEuMDY1IDE4NS4wNjUgMTYxLjA2NSAxOTEuMzE0IDE2Ny4zMTRMMjY0IDIwMEgxMzZaIiBmaWxsPSIjOUNBM0FGIi8+Cjwvc3ZnPg=='"
-						>
+			<div class="mb-12">
+				@card.Card(card.Props{Class: "overflow-hidden"}) {
+					<img 
+						src={ components.GetRecipeImageSrc(recipe.Image) }
+						alt={ recipe.Title }
+						class="w-full h-96 xl:h-[500px] object-cover"
+						onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDQwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xNjggMTUwQzE2OCAxMzMuNDMxIDE4MS40MzEgMTIwIDE5OCAxMjBDMjE0LjU2OSAxMjAgMjI4IDEzMy40MzEgMjI4IDE1MEMyMjggMTY2LjU2OSAyMTQuNTY5IDE4MCAyMTQgMTgwQzE4MS40MzEgMTgwIDE2OCAxNjYuNTY5IDE2OCAxNTBaIiBmaWxsPSIjOUNBM0FGIi8+CjxwYXRoIGQ9Ik0xMzYgMjAwTDE2OC42ODYzIDE2Ny4zMTRDMTc0LjkzNSAxNjEuMDY1IDE4NS4wNjUgMTYxLjA2NSAxOTEuMzE0IDE2Ny4zMTRMMjY0IDIwMEgxMzZaIiBmaWxsPSIjOUNBM0FGIi8+Cjwvc3ZnPg=='"
+					>
+				}
+			</div>
+
+			<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+				@recipeIngredients(recipe)
+				@recipeInstructions(recipe)
+			</div>
+		</div>
+	</div>
+}
+
+templ recipeHeader(recipe *models.Recipe) {
+	<div class="mb-12">
+		@button.Button(button.Props{
+			Href: "/",
+			Class: "mb-8 group",
+			Variant: "outline",
+		}) {
+			@icon.Icon("arrow-left")(icon.Props{Size: 16, Class: "mr-2 transition-transform group-hover:-translate-x-1"})
+			Back to Recipes
+		}
+		
+		<div class="space-y-6">
+			<h1 class="text-5xl font-bold text-foreground leading-tight">{ recipe.Title }</h1>
+			if recipe.Description != "" {
+				<p class="text-xl text-muted-foreground max-w-4xl leading-relaxed">{ recipe.Description }</p>
+			}
+			
+			<!-- Clean stats bar -->
+			<div class="flex flex-wrap items-center gap-8 pt-6 border-b border-border pb-6">
+				if recipe.CookTime > 0 {
+					<div class="flex items-center gap-3 text-muted-foreground">
+						@icon.Icon("clock")(icon.Props{Size: 20, Class: "text-primary"})
+						<span class="font-medium">{ components.FormatCookTime(recipe.CookTime) }</span>
 					</div>
 				}
-			</div>
-
-			<!-- Recipe Info -->
-			<div>
-				@card.Card(card.Props{}) {
-					@card.Header() {
-						@card.Title() {
-							Recipe Information
-						}
-					}
-					@card.Content() {
-						<div class="space-y-4">
-							if recipe.CookTime > 0 {
-								<div class="flex items-center">
-									<svg class="w-5 h-5 mr-3 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-									</svg>
-									<span class="text-sm font-medium">Cook Time:</span>
-									<span class="ml-2 text-foreground">{ components.FormatCookTime(recipe.CookTime) }</span>
-								</div>
-							}
-							if recipe.Servings > 0 {
-								<div class="flex items-center">
-									<svg class="w-5 h-5 mr-3 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-									</svg>
-									<span class="text-sm font-medium">Servings:</span>
-									<span class="ml-2 text-foreground">{ components.FormatServings(recipe.Servings) }</span>
-								</div>
-							}
-							if len(recipe.Tags) > 0 {
-								<div>
-									<span class="text-sm font-medium mb-2 block">Tags:</span>
-									<div class="flex flex-wrap gap-2">
-										for _, tag := range recipe.Tags {
-											<span class="px-3 py-1 bg-secondary text-secondary-foreground text-sm rounded-full">{ tag }</span>
-										}
-									</div>
-								</div>
+				if recipe.Servings > 0 {
+					<div class="flex items-center gap-3 text-muted-foreground">
+						@icon.Icon("users")(icon.Props{Size: 20, Class: "text-primary"})
+						<span class="font-medium">{ components.FormatServings(recipe.Servings) }</span>
+					</div>
+				}
+				if len(recipe.Tags) > 0 {
+					<div class="flex items-center gap-3">
+						@icon.Icon("tag")(icon.Props{Size: 20, Class: "text-primary"})
+						<div class="flex flex-wrap gap-2">
+							for _, tag := range recipe.Tags {
+								@badge.Badge(badge.Props{Variant: badge.VariantSecondary, Class: "text-xs"}) {
+									{ tag }
+								}
 							}
 						</div>
-					}
-				}
-			</div>
-		</div>
-
-		<!-- Ingredients and Steps -->
-		<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-			<!-- Ingredients -->
-			<div>
-				@card.Card(card.Props{}) {
-					@card.Header() {
-						@card.Title() {
-							Ingredients
-						}
-					}
-					@card.Content() {
-						if len(recipe.Ingredients) > 0 {
-							<ul class="space-y-2">
-								for _, ingredient := range recipe.Ingredients {
-									<li class="flex items-center">
-										<span class="w-2 h-2 bg-primary rounded-full mr-3 flex-shrink-0"></span>
-										<span class="text-foreground">{ formatIngredient(ingredient) }</span>
-									</li>
-								}
-							</ul>
-						} else {
-							<p class="text-muted-foreground">No ingredients listed.</p>
-						}
-					}
-				}
-			</div>
-
-			<!-- Instructions -->
-			<div>
-				@card.Card(card.Props{}) {
-					@card.Header() {
-						@card.Title() {
-							Instructions
-						}
-					}
-					@card.Content() {
-						if len(recipe.Steps) > 0 {
-							<ol class="space-y-4">
-								for i, step := range recipe.Steps {
-									<li class="flex">
-										<span class="flex-shrink-0 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium mr-3 mt-0.5">
-											{ formatStepNumber(i + 1) }
-										</span>
-										<span class="text-foreground">{ step }</span>
-									</li>
-								}
-							</ol>
-						} else {
-							<p class="text-muted-foreground">No instructions provided.</p>
-						}
-					}
+					</div>
 				}
 			</div>
 		</div>
 	</div>
 }
 
-templ recipeErrorState(errorMsg string) {
-	<div class="max-w-2xl mx-auto">
-		@button.Button(button.Props{
-			Href: "/",
-			Class: "mb-4",
-			Variant: "outline",
-		}) {
-			← Back to Recipes
-		}
-		@card.Card(card.Props{Class: "text-center py-8"}) {
+templ recipeIngredients(recipe *models.Recipe) {
+	<div>
+		@card.Card(card.Props{Class: "h-full"}) {
+			@card.Header(card.HeaderProps{Class: "pb-2"}) {
+				@card.Title(card.TitleProps{Class: "flex items-center gap-3 text-2xl font-bold"}) {
+					@icon.Icon("shopping-cart")(icon.Props{Size: 24, Class: "text-primary"})
+					Ingredients
+					if len(recipe.Ingredients) > 0 {
+						@badge.Badge(badge.Props{Variant: badge.VariantSecondary, Class: "ml-auto text-xs"}) {
+							{ strconv.Itoa(len(recipe.Ingredients)) } items
+						}
+					}
+				}
+			}
 			@card.Content() {
-				<div class="text-destructive mb-4">
-					<svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-					</svg>
-				</div>
-				<p class="text-muted-foreground mb-4">{ errorMsg }</p>
-				@button.Button(button.Props{Href: "/"}) {
-					Go Back to Recipes
+				if len(recipe.Ingredients) > 0 {
+					<div>
+						for _, ingredient := range recipe.Ingredients {
+							<div class="grid grid-cols-[50px_1fr] gap-6 p-2 rounded-lg hover:bg-muted/50 transition-colors">
+								<div class="text-left">
+									if hasIngredientQuantity(ingredient) {
+										<span class="inline-flex items-baseline gap-1">
+											if ingredient.Quantity > 0 {
+												<span class="font-semibold text-foreground">{ formatQuantityNumber(ingredient.Quantity) }</span>
+											}
+											if ingredient.Unit != "" {
+												<span class="text-sm text-muted-foreground font-medium">{ ingredient.Unit }</span>
+											}
+										</span>
+									} else {
+										<span class="text-xs text-muted-foreground"></span>
+									}
+								</div>
+								<div class="text-left">
+									<span class="text-foreground leading-relaxed">{ formatIngredientName(ingredient) }</span>
+								</div>
+							</div>
+						}
+					</div>
+				} else {
+					<div class="text-center py-12 text-muted-foreground">
+						@icon.Icon("package")(icon.Props{Size: 48, Class: "mx-auto mb-4 opacity-50"})
+						<p>No ingredients listed.</p>
+					</div>
 				}
 			}
 		}
 	</div>
+}
+
+templ recipeInstructions(recipe *models.Recipe) {
+	<div>
+		@card.Card(card.Props{Class: "h-full"}) {
+			@card.Header(card.HeaderProps{Class: "pb-2"}) {
+				@card.Title(card.TitleProps{Class: "flex items-center gap-3 text-2xl font-bold"}) {
+					@icon.Icon("list-ordered")(icon.Props{Size: 22, Class: "text-primary"})
+					Instructions
+					if len(recipe.Steps) > 0 {
+						@badge.Badge(badge.Props{Variant: badge.VariantSecondary, Class: "ml-auto text-xs"}) {
+							{ strconv.Itoa(len(recipe.Steps)) } steps
+						}
+					}
+				}
+			}
+			@card.Content() {
+				if len(recipe.Steps) > 0 {
+					<div class="space-y-2">
+						for i, step := range recipe.Steps {
+							<div class="flex items-baseline gap-4 p-3 rounded-lg hover:bg-muted/50 transition-colors">
+								<div class="flex-shrink-0">
+									<div class="w-8 h-8 border-2 border-primary text-primary rounded-full flex items-center justify-center text-sm font-bold">
+										{ strconv.Itoa(i + 1) }
+									</div>
+								</div>
+								<span class="text-foreground leading-relaxed">{ step }</span>
+							</div>
+						}
+					</div>
+				} else {
+					<div class="text-center py-12 text-muted-foreground">
+						@icon.Icon("clipboard-list")(icon.Props{Size: 48, Class: "mx-auto mb-4 opacity-50"})
+						<p>No instructions provided.</p>
+					</div>
+				}
+			}
+		}
+	</div>
+}
+
+templ recipeErrorState(errorMsg string) {
+	<div class="min-h-screen bg-background flex items-center justify-center px-4">
+		<div class="max-w-2xl w-full">
+			@button.Button(button.Props{
+				Href: "/",
+				Class: "mb-6 group",
+				Variant: "outline",
+			}) {
+				@icon.Icon("arrow-left")(icon.Props{Size: 16, Class: "mr-2 transition-transform group-hover:-translate-x-1"})
+				Back to Recipes
+			}
+			@card.Card(card.Props{Class: "text-center py-12"}) {
+				@card.Content() {
+					<div class="text-destructive mb-6">
+						@icon.Icon("triangle")(icon.Props{Size: 64, Class: "mx-auto"})
+					</div>
+					<h2 class="text-2xl font-bold text-foreground mb-4">Oops! Something went wrong</h2>
+					<p class="text-muted-foreground mb-8 text-lg">{ errorMsg }</p>
+					@button.Button(button.Props{Href: "/", Class: "group"}) {
+						@icon.Icon("house")(icon.Props{Size: 16, Class: "mr-2"})
+						Go Back to Recipes
+					}
+				}
+			}
+		</div>
+	</div>
+}
+
+// Helper functions
+
+func getRecipeTitle(recipe *models.Recipe) string {
+	if recipe != nil {
+		return recipe.Title
+	}
+	return "Recipe Not Found"
+}
+
+func formatIngredientName(ingredient models.Ingredient) string {
+	return ingredient.Name
+}
+
+func hasIngredientQuantity(ingredient models.Ingredient) bool {
+	return ingredient.Quantity > 0 || ingredient.Unit != ""
+}
+
+func formatQuantityNumber(quantity float32) string {
+	if quantity == float32(int(quantity)) {
+		return fmt.Sprintf("%.0f", quantity)
+	}
+	return fmt.Sprintf("%.1f", quantity)
 }

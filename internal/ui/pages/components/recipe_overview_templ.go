@@ -988,7 +988,7 @@ func recipeCard(recipe models.Recipe) templ.Component {
 								return templ_7745c5c3_Err
 							}
 							var templ_7745c5c3_Var42 string
-							templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(FormatExtraTags(len(recipe.Tags) - 3))
+							templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(formatExtraTags(len(recipe.Tags) - 3))
 							if templ_7745c5c3_Err != nil {
 								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/components/recipe_overview.templ`, Line: 239, Col: 48}
 							}
@@ -1216,7 +1216,7 @@ func recipePagination(recipePage *models.RecipePage, filter *models.RecipeFilter
 						}
 						ctx = templ.InitializeContext(ctx)
 						templ_7745c5c3_Err = pagination.Previous(pagination.PreviousProps{
-							Href:  "/partial/recipes?" + BuildPaginationQueryString(recipePage.Page-1, filter),
+							Href:  "/partial/recipes?" + buildPaginationQueryString(recipePage.Page-1, filter),
 							Label: "Previous",
 							Attributes: templ.Attributes{
 								"x-target": "recipes-grid",
@@ -1259,7 +1259,7 @@ func recipePagination(recipePage *models.RecipePage, filter *models.RecipeFilter
 								}
 								ctx = templ.InitializeContext(ctx)
 								var templ_7745c5c3_Var55 string
-								templ_7745c5c3_Var55, templ_7745c5c3_Err = templ.JoinStringErrs(FormatPageNumber(i))
+								templ_7745c5c3_Var55, templ_7745c5c3_Err = templ.JoinStringErrs(formatPageNumber(i))
 								if templ_7745c5c3_Err != nil {
 									return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/components/recipe_overview.templ`, Line: 293, Col: 28}
 								}
@@ -1281,7 +1281,7 @@ func recipePagination(recipePage *models.RecipePage, filter *models.RecipeFilter
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-					} else if ShouldShowPage(i, recipePage.Page, recipePage.TotalPages) {
+					} else if shouldShowPage(i, recipePage.Page, recipePage.TotalPages) {
 						templ_7745c5c3_Var56 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 							templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 							templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
@@ -1307,7 +1307,7 @@ func recipePagination(recipePage *models.RecipePage, filter *models.RecipeFilter
 								}
 								ctx = templ.InitializeContext(ctx)
 								var templ_7745c5c3_Var58 string
-								templ_7745c5c3_Var58, templ_7745c5c3_Err = templ.JoinStringErrs(FormatPageNumber(i))
+								templ_7745c5c3_Var58, templ_7745c5c3_Err = templ.JoinStringErrs(formatPageNumber(i))
 								if templ_7745c5c3_Err != nil {
 									return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/components/recipe_overview.templ`, Line: 304, Col: 28}
 								}
@@ -1318,7 +1318,7 @@ func recipePagination(recipePage *models.RecipePage, filter *models.RecipeFilter
 								return nil
 							})
 							templ_7745c5c3_Err = pagination.Link(pagination.LinkProps{
-								Href: "/partial/recipes?" + BuildPaginationQueryString(i, filter),
+								Href: "/partial/recipes?" + buildPaginationQueryString(i, filter),
 								Attributes: templ.Attributes{
 									"x-target": "recipes-grid",
 								},
@@ -1352,7 +1352,7 @@ func recipePagination(recipePage *models.RecipePage, filter *models.RecipeFilter
 						}
 						ctx = templ.InitializeContext(ctx)
 						templ_7745c5c3_Err = pagination.Next(pagination.NextProps{
-							Href:  "/partial/recipes?" + BuildPaginationQueryString(recipePage.Page+1, filter),
+							Href:  "/partial/recipes?" + buildPaginationQueryString(recipePage.Page+1, filter),
 							Label: "Next",
 							Attributes: templ.Attributes{
 								"x-target": "recipes-grid",
@@ -1608,7 +1608,7 @@ func recipeSkeletonCard() templ.Component {
 
 // Helper functions
 
-func BuildPaginationQueryString(page int, filter *models.RecipeFilter) string {
+func buildPaginationQueryString(page int, filter *models.RecipeFilter) string {
 	params := url.Values{}
 	params.Set("page", strconv.Itoa(page))
 
@@ -1629,7 +1629,7 @@ func BuildPaginationQueryString(page int, filter *models.RecipeFilter) string {
 	return params.Encode()
 }
 
-func ShouldShowPage(page, currentPage, totalPages int) bool {
+func shouldShowPage(page, currentPage, totalPages int) bool {
 	// Always show first and last page
 	if page == 1 || page == totalPages {
 		return true
@@ -1641,6 +1641,21 @@ func ShouldShowPage(page, currentPage, totalPages int) bool {
 	}
 
 	return false
+}
+
+func getQueryValue(query map[string][]string, key string) string {
+	if values, exists := query[key]; exists && len(values) > 0 {
+		return values[0]
+	}
+	return ""
+}
+
+func formatExtraTags(count int) string {
+	return strconv.Itoa(count)
+}
+
+func formatPageNumber(page int) string {
+	return strconv.Itoa(page)
 }
 
 var _ = templruntime.GeneratedTemplate

@@ -236,7 +236,7 @@ templ recipeCard(recipe models.Recipe) {
 								Variant: badge.VariantSecondary,
 								Class:   "text-xs opacity-75 flex-shrink-0",
 							}) {
-								+{ FormatExtraTags(len(recipe.Tags) - 3) }
+								+{ formatExtraTags(len(recipe.Tags) - 3) }
 							}
 						}
 					} else {
@@ -275,7 +275,7 @@ templ recipePagination(recipePage *models.RecipePage, filter *models.RecipeFilte
 			if recipePage.Page > 1 {
 				@pagination.Item() {
 					@pagination.Previous(pagination.PreviousProps{
-                        Href:  "/partial/recipes?" + BuildPaginationQueryString(recipePage.Page - 1, filter),
+                        Href:  "/partial/recipes?" + buildPaginationQueryString(recipePage.Page - 1, filter),
                         Label: "Previous",
 						Attributes: templ.Attributes{
 							"x-target": "recipes-grid",
@@ -290,18 +290,18 @@ templ recipePagination(recipePage *models.RecipePage, filter *models.RecipeFilte
 						@pagination.Link(pagination.LinkProps{
 							IsActive: true,
 						}) {
-							{ FormatPageNumber(i) }
+							{ formatPageNumber(i) }
 						}
 					}
-				} else if ShouldShowPage(i, recipePage.Page, recipePage.TotalPages) {
+				} else if shouldShowPage(i, recipePage.Page, recipePage.TotalPages) {
 					@pagination.Item() {
 						@pagination.Link(pagination.LinkProps{
-							Href: "/partial/recipes?" + BuildPaginationQueryString(i, filter),
+							Href: "/partial/recipes?" + buildPaginationQueryString(i, filter),
 							Attributes: templ.Attributes{
 								"x-target": "recipes-grid",
 							},
 						}) {
-							{ FormatPageNumber(i) }
+							{ formatPageNumber(i) }
 						}
 					}
 				}
@@ -310,7 +310,7 @@ templ recipePagination(recipePage *models.RecipePage, filter *models.RecipeFilte
 			if recipePage.Page < recipePage.TotalPages {
 				@pagination.Item() {
 					@pagination.Next(pagination.NextProps{
-						Href:  "/partial/recipes?" + BuildPaginationQueryString(recipePage.Page + 1, filter),
+						Href:  "/partial/recipes?" + buildPaginationQueryString(recipePage.Page + 1, filter),
 						Label: "Next",
 						Attributes: templ.Attributes{
 							"x-target": "recipes-grid",
@@ -360,7 +360,7 @@ templ recipeSkeletonCard() {
 
 // Helper functions
 
-func BuildPaginationQueryString(page int, filter *models.RecipeFilter) string {
+func buildPaginationQueryString(page int, filter *models.RecipeFilter) string {
 	params := url.Values{}
 	params.Set("page", strconv.Itoa(page))
 
@@ -381,7 +381,7 @@ func BuildPaginationQueryString(page int, filter *models.RecipeFilter) string {
 	return params.Encode()
 }
 
-func ShouldShowPage(page, currentPage, totalPages int) bool {
+func shouldShowPage(page, currentPage, totalPages int) bool {
 	// Always show first and last page
 	if page == 1 || page == totalPages {
 		return true
@@ -393,4 +393,19 @@ func ShouldShowPage(page, currentPage, totalPages int) bool {
 	}
 
 	return false
+}
+
+func getQueryValue(query map[string][]string, key string) string {
+	if values, exists := query[key]; exists && len(values) > 0 {
+		return values[0]
+	}
+	return ""
+}
+
+func formatExtraTags(count int) string {
+	return strconv.Itoa(count)
+}
+
+func formatPageNumber(page int) string {
+	return strconv.Itoa(page)
 }
