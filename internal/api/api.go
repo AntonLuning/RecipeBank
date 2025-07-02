@@ -214,7 +214,9 @@ func (s *APIServer) handleDeleteRecipe(w http.ResponseWriter, r *http.Request) e
 		return err
 	}
 
-	return writeSuccessResponse(w, http.StatusNoContent, nil)
+	// For 204 No Content, we should not write any response body
+	w.WriteHeader(http.StatusNoContent)
+	return nil
 }
 
 // PostRecipeFromImage godoc

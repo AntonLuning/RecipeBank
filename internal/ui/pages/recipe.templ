@@ -9,61 +9,147 @@ import (
 	"github.com/AntonLuning/RecipeBank/internal/ui/components/button"
 	"github.com/AntonLuning/RecipeBank/internal/ui/components/badge"
 	"github.com/AntonLuning/RecipeBank/internal/ui/components/icon"
+	"github.com/AntonLuning/RecipeBank/internal/ui/components/input"
+	"github.com/AntonLuning/RecipeBank/internal/ui/components/form"
 	"github.com/AntonLuning/RecipeBank/internal/ui/pages/components"
+	"github.com/AntonLuning/RecipeBank/internal/ui/pages/layouts"
 )
 
 type RecipePageData struct {
-	Recipe *models.Recipe
-	Error  string
+	Recipe   *models.Recipe
+	Error    string
+	EditMode bool
 }
 
 templ RecipePage(data RecipePageData) {
-	@BaseLayout("Recipe Bank - " + getRecipeTitle(data.Recipe)) {
+	@layouts.BaseLayout("Recipe Bank - " + getRecipeTitle(data.Recipe)) {
 		if data.Error != "" {
 			@recipeErrorState(data.Error)
 		} else {
-			@recipeDetail(data.Recipe)
+			@recipeDetail(data.Recipe, data.EditMode)
 		}
 	}
 }
 
-templ recipeDetail(recipe *models.Recipe) {
-	<div class="min-h-screen bg-background">
+templ recipeDetail(recipe *models.Recipe, editMode bool) {
+	<div class="min-h-screen bg-background" x-data={ 
+		fmt.Sprintf("{ editMode: %t, hasUnsavedChanges: false, formData: { title: $el.dataset.title || '' } }", editMode) 
+	} data-title={ recipe.Title } data-recipe-id={ recipe.ID.Hex() }>
 		<div class="max-w-6xl mx-auto px-4 py-12">
-			@recipeHeader(recipe)
+			<form method="POST" action={ "/recipe/" + recipe.ID.Hex() }>
+				@recipeHeader(recipe)
 
-			<div class="mb-12">
-				@card.Card(card.Props{Class: "overflow-hidden"}) {
-					<img 
-						src={ components.GetRecipeImageSrc(recipe.Image) }
-						alt={ recipe.Title }
-						class="w-full h-96 xl:h-[500px] object-cover"
-						onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDQwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xNjggMTUwQzE2OCAxMzMuNDMxIDE4MS40MzEgMTIwIDE5OCAxMjBDMjE0LjU2OSAxMjAgMjI4IDEzMy40MzEgMjI4IDE1MEMyMjggMTY2LjU2OSAyMTQuNTY5IDE4MCAyMTQgMTgwQzE4MS40MzEgMTgwIDE2OCAxNjYuNTY5IDE2OCAxNTBaIiBmaWxsPSIjOUNBM0FGIi8+CjxwYXRoIGQ9Ik0xMzYgMjAwTDE2OC42ODYzIDE2Ny4zMTRDMTc0LjkzNSAxNjEuMDY1IDE4NS4wNjUgMTYxLjA2NSAxOTEuMzE0IDE2Ny4zMTRMMjY0IDIwMEgxMzZaIiBmaWxsPSIjOUNBM0FGIi8+Cjwvc3ZnPg=='"
-					>
-				}
-			</div>
+				<div class="mb-12">
+					@card.Card(card.Props{Class: "overflow-hidden"}) {
+						<img 
+							src={ components.GetRecipeImageSrc(recipe.Image) }
+							alt={ recipe.Title }
+							class="w-full h-96 xl:h-[500px] object-cover"
+							onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDQwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xNjggMTUwQzE2OCAxMzMuNDMxIDE4MS40MzEgMTIwIDE5OCAxMjBDMjE0LjU2OSAxMjAgMjI4IDEzMy40MzEgMjI4IDE1MEMyMjggMTY2LjU2OSAyMTQuNTY5IDE4MCAyMTQgMTgwQzE4MS40MzEgMTgwIDE2OCAxNjYuNTY5IDE2OCAxNTBaIiBmaWxsPSIjOUNBM0FGIi8+CjxwYXRoIGQ9Ik0xMzYgMjAwTDE2OC42ODYzIDE2Ny4zMTRDMTc0LjkzNSAxNjEuMDY1IDE4NS4wNjUgMTYxLjA2NSAxOTEuMzE0IDE2Ny4zMTRMMjY0IDIwMEgxMzZaIiBmaWxsPSIjOUNBM0FGIi8+Cjwvc3ZnPg=='"
+						>
+					}
+				</div>
 
-			<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-				@recipeIngredients(recipe)
-				@recipeInstructions(recipe)
-			</div>
+				<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+					@recipeIngredients(recipe)
+					@recipeInstructions(recipe)
+				</div>
+			</form>
 		</div>
 	</div>
 }
 
 templ recipeHeader(recipe *models.Recipe) {
 	<div class="mb-12">
-		@button.Button(button.Props{
-			Href: "/",
-			Class: "mb-8 group",
-			Variant: "outline",
-		}) {
-			@icon.Icon("arrow-left")(icon.Props{Size: 16, Class: "mr-2 transition-transform group-hover:-translate-x-1"})
-			Back to Recipes
-		}
+		<div class="flex items-center justify-between mb-8">
+			@button.Button(button.Props{
+				Href: "/",
+				Class: "group",
+				Variant: "outline",
+			}) {
+				@icon.Icon("arrow-left")(icon.Props{Size: 16, Class: "mr-2 transition-transform group-hover:-translate-x-1"})
+				Back to Recipes
+			}
+			
+			<!-- Edit/Save/Cancel/Delete buttons -->
+			<div class="flex items-center gap-3">
+				<!-- Edit button (view mode) -->
+				<div x-show="!editMode">
+					@button.Button(button.Props{
+						Class: "group",
+						Variant: "default",
+						Attributes: templ.Attributes{"@click": "editMode = true; formData.title = $el.closest('[data-title]').dataset.title"},
+					}) {
+						@icon.Icon("pencil")(icon.Props{Size: 16, Class: "mr-2"})
+						Edit Recipe
+					}
+				</div>
+				
+				<!-- Save/Cancel buttons (edit mode) -->
+				<div x-show="editMode" class="flex items-center gap-3">
+					@button.Button(button.Props{
+						Class: "group",
+						Variant: "outline",
+						Attributes: templ.Attributes{"@click": "editMode = false; hasUnsavedChanges = false; formData.title = $el.closest('[data-title]').dataset.title"},
+					}) {
+						@icon.Icon("x")(icon.Props{Size: 16, Class: "mr-2"})
+						Cancel
+					}
+					@button.Button(button.Props{
+						Class: "group",
+						Variant: "default",
+						Attributes: templ.Attributes{
+							":disabled": "!hasUnsavedChanges",
+							"@click": "document.querySelector('form[method=\"POST\"]').submit()",
+						},
+					}) {
+						@icon.Icon("check")(icon.Props{Size: 16, Class: "mr-2"})
+						<span x-text="hasUnsavedChanges ? 'Save Changes' : 'No Changes'"></span>
+					}
+					
+					<!-- Delete button (edit mode) - positioned separately -->
+					<div class="border-l border-border pl-3 ml-3">
+						@button.Button(button.Props{
+							Class: "group",
+							Variant: "outline",
+							Attributes: templ.Attributes{"@click": "if (confirm('Are you sure you want to delete this recipe? This action cannot be undone.')) { fetch('/recipe/' + $el.closest('[data-recipe-id]').dataset.recipeId, { method: 'DELETE' }).then(response => { if (response.ok) window.location.href = '/'; else alert('Failed to delete recipe.'); }).catch(() => alert('Error deleting recipe.')); }"},
+						}) {
+							@icon.Icon("trash")(icon.Props{Size: 16, Class: "mr-2 text-destructive"})
+							<span class="text-destructive">Delete</span>
+						}
+					</div>
+				</div>
+			</div>
+		</div>
 		
 		<div class="space-y-6">
-			<h1 class="text-5xl font-bold text-foreground leading-tight">{ recipe.Title }</h1>
+			<!-- Title - View Mode -->
+			<h1 x-show="!editMode" class="text-5xl font-bold text-foreground leading-tight">{ recipe.Title }</h1>
+			
+			<!-- Title - Edit Mode -->
+			<div x-show="editMode">
+				@form.Item() {
+					<div class="space-y-2">
+						<div class="inline-block">
+							<span x-show="hasUnsavedChanges" class="block text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full">
+								Unsaved changes
+							</span>
+						</div>
+						@input.Input(input.Props{
+							Type: input.TypeText,
+							Name: "title",
+							ID: "title",
+							Placeholder: "Enter recipe title...",
+							Class: "w-full text-5xl font-bold text-foreground leading-tight bg-transparent border-b-2 border-border focus:border-primary px-0 py-2 h-auto rounded-none",
+							Attributes: templ.Attributes{
+								"x-model": "formData.title",
+								"@input": "hasUnsavedChanges = true",
+							},
+						})
+					</div>
+				}
+			</div>
+			
 			if recipe.Description != "" {
 				<p class="text-xl text-muted-foreground max-w-4xl leading-relaxed">{ recipe.Description }</p>
 			}

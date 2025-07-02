@@ -3,11 +3,12 @@ package pages
 import (
 	"github.com/AntonLuning/RecipeBank/internal/ui/components/button"
 	"github.com/AntonLuning/RecipeBank/internal/ui/components/modal"
+	"github.com/AntonLuning/RecipeBank/internal/ui/pages/layouts"
 	"github.com/AntonLuning/RecipeBank/internal/ui/pages/components"
 )
 
 templ HomePage() {
-	@BaseLayout("Recipe Bank - Home") {
+	@layouts.BaseLayout("Recipe Bank - Home") {
 		@homeHeader()
 		@components.RecipesOverviewLoading()
 		@components.CreateRecipeModal()

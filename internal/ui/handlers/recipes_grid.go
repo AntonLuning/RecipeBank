@@ -14,8 +14,6 @@ import (
 
 func GetRecipesGridPartial(apiURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-
 		filter := createFilterFromQuery(r.URL.Query())
 
 		// Fetch recipes from API
@@ -26,9 +24,7 @@ func GetRecipesGridPartial(apiURL string) http.HandlerFunc {
 				RecipePage: nil,
 				Error:      err.Error(),
 			}, &filter)
-			if renderErr := component.Render(r.Context(), w); renderErr != nil {
-				http.Error(w, "Failed to render page", http.StatusInternalServerError)
-			}
+			renderComponent(w, r, component)
 			return
 		}
 
@@ -37,10 +33,7 @@ func GetRecipesGridPartial(apiURL string) http.HandlerFunc {
 			RecipePage: recipePage,
 			Error:      "",
 		}, &filter)
-		if err := component.Render(r.Context(), w); err != nil {
-			http.Error(w, "Failed to render page", http.StatusInternalServerError)
-			return
-		}
+		renderComponent(w, r, component)
 	}
 }
 
