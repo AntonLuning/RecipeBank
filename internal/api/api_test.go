@@ -255,7 +255,10 @@ func TestHandleGetRecipes(t *testing.T) {
 		}
 
 		// Set up the mock service
-		mockService.On("GetRecipes", mock.Anything, models.RecipeFilter{}, 1, 10).Return(expectedPage, nil).Once()
+		mockService.On("GetRecipes", mock.Anything, models.RecipeFilter{
+			IngredientNames: []string{},
+			Tags:            []string{},
+		}, 1, 10).Return(expectedPage, nil).Once()
 
 		// Create a test request
 		req := httptest.NewRequest(http.MethodGet, "/api/v1/recipe", nil)
@@ -309,8 +312,9 @@ func TestHandleGetRecipes(t *testing.T) {
 
 		// Expected filter
 		expectedFilter := models.RecipeFilter{
-			Title: "pasta",
-			Tags:  []string{"italian"},
+			Title:           "pasta",
+			IngredientNames: []string{},
+			Tags:            []string{"italian"},
 		}
 
 		// Set up the mock service
@@ -343,7 +347,10 @@ func TestHandleGetRecipes(t *testing.T) {
 
 	t.Run("Service Error", func(t *testing.T) {
 		// Set up the mock service
-		mockService.On("GetRecipes", mock.Anything, models.RecipeFilter{}, 1, 10).Return(nil, errors.New("service error")).Once()
+		mockService.On("GetRecipes", mock.Anything, models.RecipeFilter{
+			IngredientNames: []string{},
+			Tags:            []string{},
+		}, 1, 10).Return(nil, errors.New("service error")).Once()
 
 		// Create a test request
 		req := httptest.NewRequest(http.MethodGet, "/api/v1/recipe", nil)

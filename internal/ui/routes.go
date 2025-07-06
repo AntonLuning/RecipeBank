@@ -17,11 +17,12 @@ func InitRoutes(m *http.ServeMux, apiURL string) {
 	m.HandleFunc("GET /partial/recipes-overview", handlers.GetRecipesOverviewPartial(apiURL)) // Recipes overview partial
 	m.HandleFunc("GET /partial/recipes", handlers.GetRecipesGridPartial(apiURL))              // Recipes grid partial
 
+	m.HandleFunc("GET /recipe/new", handlers.GetRecipePage(apiURL))    // New recipe page (must be before {id} route for correct routing)
 	m.HandleFunc("GET /recipe/{id}", handlers.GetRecipePage(apiURL))   // Recipe detail page
 	m.HandleFunc("POST /recipe/{id}", handlers.UpdateRecipe(apiURL))   // Update recipe endpoint
 	m.HandleFunc("DELETE /recipe/{id}", handlers.DeleteRecipe(apiURL)) // Delete recipe endpoint
 
-	// m.HandleFunc("POST /recipe", handlers.CreateRecipe(apiURL))                     // Create recipe endpoint
+	m.HandleFunc("POST /recipe", handlers.CreateRecipe(apiURL))                     // Create recipe endpoint
 	m.HandleFunc("POST /recipe/from-url", handlers.CreateRecipeFromURL(apiURL))     // Create recipe from URL endpoint
 	m.HandleFunc("POST /recipe/from-image", handlers.CreateRecipeFromImage(apiURL)) // Create recipe from image endpoint
 }

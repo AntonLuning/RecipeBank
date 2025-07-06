@@ -215,7 +215,7 @@ func (s *RecipeService) validateRecipe(recipe *models.Recipe) error {
 
 	// Validate optional image field
 	if recipe.Image != "" {
-		imageType, err := detectImageTypeFromBase64(recipe.Image)
+		imageType, err := detectImageTypeFromDataURI(recipe.Image)
 		if err != nil {
 			return fmt.Errorf("invalid image: %w", err)
 		}

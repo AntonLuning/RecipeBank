@@ -1,6 +1,7 @@
 package pages
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -11,6 +12,8 @@ import (
 	"github.com/AntonLuning/RecipeBank/internal/ui/components/icon"
 	"github.com/AntonLuning/RecipeBank/internal/ui/components/input"
 	"github.com/AntonLuning/RecipeBank/internal/ui/components/form"
+	"github.com/AntonLuning/RecipeBank/internal/ui/components/textarea"
+	"github.com/AntonLuning/RecipeBank/internal/ui/components/tabs"
 	"github.com/AntonLuning/RecipeBank/internal/ui/pages/components"
 	"github.com/AntonLuning/RecipeBank/internal/ui/pages/layouts"
 )
@@ -32,23 +35,80 @@ templ RecipePage(data RecipePageData) {
 }
 
 templ recipeDetail(recipe *models.Recipe, editMode bool) {
-	<div class="min-h-screen bg-background" x-data={ 
-		fmt.Sprintf("{ editMode: %t, hasUnsavedChanges: false, formData: { title: $el.dataset.title || '' } }", editMode) 
-	} data-title={ recipe.Title } data-recipe-id={ recipe.ID.Hex() }>
+	<div 
+		class="min-h-screen bg-background" 
+				x-data={ 
+			fmt.Sprintf(`{ 
+				editMode: %t, 
+				hasUnsavedChanges: %t, 
+				newTag: '', 
+				formData: { 
+					title: $el.dataset.title || '', 
+					description: $el.dataset.description || '', 
+					cookTime: $el.dataset.cookTime || '', 
+					servings: $el.dataset.servings || '', 
+					imageURL: '', 
+					tags: JSON.parse($el.dataset.tags || '[]'),
+					ingredients: JSON.parse($el.dataset.ingredients || '[]').map((ing, idx) => ({...ing, id: Date.now() + idx})),
+					instructions: JSON.parse($el.dataset.instructions || '[]').map((step, idx) => ({id: Date.now() + idx + 10000, text: step})),
+					uploadedImagePreview: null
+				},
+				originalImageURL: $el.dataset.imageUrl || '',
+				newIngredient: { quantity: '', unit: '', name: '' },
+				newInstruction: '',
+				removeIngredient(id) {
+					this.formData.ingredients = this.formData.ingredients.filter(ing => ing.id !== id);
+					this.hasUnsavedChanges = true;
+				},
+				moveIngredientUp(id) {
+					const idx = this.formData.ingredients.findIndex(ing => ing.id === id);
+					if (idx > 0) {
+						[this.formData.ingredients[idx-1], this.formData.ingredients[idx]] = [this.formData.ingredients[idx], this.formData.ingredients[idx-1]];
+						this.hasUnsavedChanges = true;
+					}
+				},
+				moveIngredientDown(id) {
+					const idx = this.formData.ingredients.findIndex(ing => ing.id === id);
+					if (idx < this.formData.ingredients.length - 1) {
+						[this.formData.ingredients[idx], this.formData.ingredients[idx+1]] = [this.formData.ingredients[idx+1], this.formData.ingredients[idx]];
+						this.hasUnsavedChanges = true;
+					}
+				},
+				removeInstruction(id) {
+					this.formData.instructions = this.formData.instructions.filter(inst => inst.id !== id);
+					this.hasUnsavedChanges = true;
+				},
+				moveInstructionUp(id) {
+					const idx = this.formData.instructions.findIndex(inst => inst.id === id);
+					if (idx > 0) {
+						[this.formData.instructions[idx-1], this.formData.instructions[idx]] = [this.formData.instructions[idx], this.formData.instructions[idx-1]];
+						this.hasUnsavedChanges = true;
+					}
+				},
+				moveInstructionDown(id) {
+					const idx = this.formData.instructions.findIndex(inst => inst.id === id);
+					if (idx < this.formData.instructions.length - 1) {
+						[this.formData.instructions[idx], this.formData.instructions[idx+1]] = [this.formData.instructions[idx+1], this.formData.instructions[idx]];
+						this.hasUnsavedChanges = true;
+					}
+				}
+			}`, editMode, recipe.ID.IsZero() || editMode) 
+		} 
+		data-title={ recipe.Title } 
+		data-description={ recipe.Description } 
+		data-cook-time={ fmt.Sprintf("%d", recipe.CookTime) } 
+		data-servings={ fmt.Sprintf("%d", recipe.Servings) } 
+		data-image-url={ recipe.Image } 
+		data-tags={ getStringArrayJSON(recipe.Tags) } 
+		data-ingredients={ getIngredientsJSON(recipe.Ingredients) } 
+		data-instructions={ getStringArrayJSON(recipe.Steps) }
+		data-recipe-id={ getRecipeIdHex(recipe) }
+	>
 		<div class="max-w-6xl mx-auto px-4 py-12">
-			<form method="POST" action={ "/recipe/" + recipe.ID.Hex() }>
+			<form method="POST" action={ getRecipeFormAction(recipe) } enctype="multipart/form-data">
 				@recipeHeader(recipe)
 
-				<div class="mb-12">
-					@card.Card(card.Props{Class: "overflow-hidden"}) {
-						<img 
-							src={ components.GetRecipeImageSrc(recipe.Image) }
-							alt={ recipe.Title }
-							class="w-full h-96 xl:h-[500px] object-cover"
-							onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDQwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xNjggMTUwQzE2OCAxMzMuNDMxIDE4MS40MzEgMTIwIDE5OCAxMjBDMjE0LjU2OSAxMjAgMjI4IDEzMy40MzEgMjI4IDE1MEMyMjggMTY2LjU2OSAyMTQuNTY5IDE4MCAyMTQgMTgwQzE4MS40MzEgMTgwIDE2OCAxNjYuNTY5IDE2OCAxNTBaIiBmaWxsPSIjOUNBM0FGIi8+CjxwYXRoIGQ9Ik0xMzYgMjAwTDE2OC42ODYzIDE2Ny4zMTRDMTc0LjkzNSAxNjEuMDY1IDE4NS4wNjUgMTYxLjA2NSAxOTEuMzE0IDE2Ny4zMTRMMjY0IDIwMEgxMzZaIiBmaWxsPSIjOUNBM0FGIi8+Cjwvc3ZnPg=='"
-						>
-					}
-				</div>
+				@recipeImage(recipe)
 
 				<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 					@recipeIngredients(recipe)
@@ -73,12 +133,31 @@ templ recipeHeader(recipe *models.Recipe) {
 			
 			<!-- Edit/Save/Cancel/Delete buttons -->
 			<div class="flex items-center gap-3">
+				<div class="inline-block">
+					<span x-show="hasUnsavedChanges" class="block text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full">
+						Unsaved changes
+					</span>
+				</div>
+
 				<!-- Edit button (view mode) -->
 				<div x-show="!editMode">
 					@button.Button(button.Props{
 						Class: "group",
 						Variant: "default",
-						Attributes: templ.Attributes{"@click": "editMode = true; formData.title = $el.closest('[data-title]').dataset.title"},
+						Attributes: templ.Attributes{
+							"@click": `editMode = true; 
+								const el = $el.closest('[data-title]'); 
+								formData.title = el.dataset.title; 
+								formData.description = el.dataset.description; 
+								formData.cookTime = el.dataset.cookTime; 
+								formData.servings = el.dataset.servings; 
+								formData.imageURL = ''; 
+								formData.uploadedImagePreview = null;
+								formData.tags = JSON.parse(el.dataset.tags || '[]'); 
+								formData.ingredients = JSON.parse(el.dataset.ingredients || '[]').map((ing, idx) => ({...ing, id: Date.now() + idx}));
+								formData.instructions = JSON.parse(el.dataset.instructions || '[]').map((step, idx) => ({id: Date.now() + idx + 10000, text: step}));
+								originalImageURL = el.dataset.imageUrl || ''`,
+						},
 					}) {
 						@icon.Icon("pencil")(icon.Props{Size: 16, Class: "mr-2"})
 						Edit Recipe
@@ -90,7 +169,24 @@ templ recipeHeader(recipe *models.Recipe) {
 					@button.Button(button.Props{
 						Class: "group",
 						Variant: "outline",
-						Attributes: templ.Attributes{"@click": "editMode = false; hasUnsavedChanges = false; formData.title = $el.closest('[data-title]').dataset.title"},
+						Attributes: templ.Attributes{
+							"@click": `editMode = false; 
+								hasUnsavedChanges = false; 
+								newTag = ''; 
+								newIngredient = { quantity: '', unit: '', name: '' };
+								newInstruction = '';
+								formData.uploadedImagePreview = null; 
+								const el = $el.closest('[data-title]'); 
+								formData.title = el.dataset.title; 
+								formData.description = el.dataset.description; 
+								formData.cookTime = el.dataset.cookTime; 
+								formData.servings = el.dataset.servings; 
+								formData.imageURL = ''; 
+								formData.tags = JSON.parse(el.dataset.tags || '[]'); 
+								formData.ingredients = JSON.parse(el.dataset.ingredients || '[]').map((ing, idx) => ({...ing, id: Date.now() + idx}));
+								formData.instructions = JSON.parse(el.dataset.instructions || '[]').map((step, idx) => ({id: Date.now() + idx + 10000, text: step}));
+								originalImageURL = el.dataset.imageUrl || ''`,
+						},
 					}) {
 						@icon.Icon("x")(icon.Props{Size: 16, Class: "mr-2"})
 						Cancel
@@ -104,58 +200,99 @@ templ recipeHeader(recipe *models.Recipe) {
 						},
 					}) {
 						@icon.Icon("check")(icon.Props{Size: 16, Class: "mr-2"})
-						<span x-text="hasUnsavedChanges ? 'Save Changes' : 'No Changes'"></span>
+						if recipe.ID.IsZero() {
+							<span>Create Recipe</span>
+						} else {
+							<span x-text="hasUnsavedChanges ? 'Save Changes' : 'No Changes'"></span>
+						}
 					}
 					
-					<!-- Delete button (edit mode) - positioned separately -->
-					<div class="border-l border-border pl-3 ml-3">
-						@button.Button(button.Props{
-							Class: "group",
-							Variant: "outline",
-							Attributes: templ.Attributes{"@click": "if (confirm('Are you sure you want to delete this recipe? This action cannot be undone.')) { fetch('/recipe/' + $el.closest('[data-recipe-id]').dataset.recipeId, { method: 'DELETE' }).then(response => { if (response.ok) window.location.href = '/'; else alert('Failed to delete recipe.'); }).catch(() => alert('Error deleting recipe.')); }"},
-						}) {
-							@icon.Icon("trash")(icon.Props{Size: 16, Class: "mr-2 text-destructive"})
-							<span class="text-destructive">Delete</span>
-						}
-					</div>
+					<!-- Delete button (edit mode) - positioned separately, only for existing recipes -->
+					if !recipe.ID.IsZero() {
+						<div class="border-l border-border pl-3 ml-3">
+							@button.Button(button.Props{
+								Class: "group",
+								Variant: "outline",
+								Attributes: templ.Attributes{
+									"@click": `if (confirm('Are you sure you want to delete this recipe? This action cannot be undone.')) {
+										fetch('/recipe/' + $el.closest('[data-recipe-id]').dataset.recipeId, {
+											method: 'DELETE'
+										})
+										.then(response => {
+											if (response.ok) {
+												window.location.href = '/';
+											} else {
+												alert('Failed to delete recipe.');
+											}
+										})
+										.catch(() => {
+											alert('Error deleting recipe.');
+										});
+									}`,
+								},
+							}) {
+								@icon.Icon("trash")(icon.Props{Size: 16, Class: "mr-2 text-destructive"})
+								<span class="text-destructive">Delete</span>
+							}
+						</div>
+					}
 				</div>
 			</div>
 		</div>
 		
 		<div class="space-y-6">
 			<!-- Title - View Mode -->
-			<h1 x-show="!editMode" class="text-5xl font-bold text-foreground leading-tight">{ recipe.Title }</h1>
+			<h1 x-show="!editMode" class="text-5xl font-bold text-foreground leading-tight">
+				if recipe.Title != "" {
+					{ recipe.Title }
+				} else {
+					<span class="text-muted-foreground italic">New Recipe</span>
+				}
+			</h1>
 			
 			<!-- Title - Edit Mode -->
 			<div x-show="editMode">
 				@form.Item() {
-					<div class="space-y-2">
-						<div class="inline-block">
-							<span x-show="hasUnsavedChanges" class="block text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full">
-								Unsaved changes
-							</span>
-						</div>
-						@input.Input(input.Props{
-							Type: input.TypeText,
-							Name: "title",
-							ID: "title",
-							Placeholder: "Enter recipe title...",
-							Class: "w-full text-5xl font-bold text-foreground leading-tight bg-transparent border-b-2 border-border focus:border-primary px-0 py-2 h-auto rounded-none",
-							Attributes: templ.Attributes{
-								"x-model": "formData.title",
-								"@input": "hasUnsavedChanges = true",
-							},
-						})
-					</div>
+					@input.Input(input.Props{
+						Type: input.TypeText,
+						Name: "title",
+						ID: "title",
+						Placeholder: "Enter recipe title...",
+						Class: "w-full text-5xl font-bold text-foreground leading-tight bg-transparent border-b-2 border-border focus:border-primary p-2 h-auto rounded-none",
+						Attributes: templ.Attributes{
+							"x-model": "formData.title",
+							"@input": "hasUnsavedChanges = true",
+						},
+					})
 				}
 			</div>
 			
-			if recipe.Description != "" {
-				<p class="text-xl text-muted-foreground max-w-4xl leading-relaxed">{ recipe.Description }</p>
-			}
+			<!-- Description - View Mode -->
+			<div x-show="!editMode">
+				if recipe.Description != "" {
+					<p class="text-xl text-muted-foreground leading-relaxed">{ recipe.Description }</p>
+				}
+			</div>
 			
-			<!-- Clean stats bar -->
-			<div class="flex flex-wrap items-center gap-8 pt-6 border-b border-border pb-6">
+			<!-- Description - Edit Mode -->
+			<div x-show="editMode">
+				@form.Item() {
+					@textarea.Textarea(textarea.Props{
+						Name: "description",
+						ID: "description",
+						Placeholder: "Enter recipe description...",
+						AutoResize: true,
+						Class: "w-full text-xl text-muted-foreground leading-relaxed bg-transparent border border-border focus:border-primary p-2 rounded-none",
+						Attributes: templ.Attributes{
+							"x-model": "formData.description",
+							"@input": "hasUnsavedChanges = true",
+						},
+					})
+				}
+			</div>
+			
+			<!-- Stats bar - View Mode -->
+			<div x-show="!editMode" class="flex flex-wrap items-center gap-8 pt-6 border-b border-border pb-6">
 				if recipe.CookTime > 0 {
 					<div class="flex items-center gap-3 text-muted-foreground">
 						@icon.Icon("clock")(icon.Props{Size: 20, Class: "text-primary"})
@@ -181,7 +318,251 @@ templ recipeHeader(recipe *models.Recipe) {
 					</div>
 				}
 			</div>
+			
+			<!-- Stats bar - Edit Mode -->
+			<div x-show="editMode" class="flex flex-wrap items-baseline gap-8 pt-6 border-b border-border pb-6">
+				<!-- Cook Time Edit -->
+				<div class="flex items-center gap-3 text-muted-foreground">
+					@icon.Icon("clock")(icon.Props{Size: 20, Class: "text-primary"})
+					<div class="flex items-center gap-2">
+						@input.Input(input.Props{
+							Type: input.TypeNumber,
+							Name: "cookTime",
+							ID: "cookTime",
+							Placeholder: "0",
+							Class: "w-16 text-center font-medium bg-transparent border-b border-muted-foreground focus:border-primary px-2 py-1 h-7 text-sm rounded-none appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]",
+							Attributes: templ.Attributes{
+								"x-model": "formData.cookTime",
+								"@input": "hasUnsavedChanges = true",
+								"min": "0",
+							},
+						})
+						<span class="text-sm font-medium">minutes</span>
+					</div>
+				</div>
+				
+				<!-- Servings Edit -->
+				<div class="flex items-center gap-3 text-muted-foreground">
+					@icon.Icon("users")(icon.Props{Size: 20, Class: "text-primary"})
+					<div class="flex items-center gap-2">
+						@input.Input(input.Props{
+							Type: input.TypeNumber,
+							Name: "servings",
+							ID: "servings",
+							Placeholder: "0",
+							Class: "w-16 text-center font-medium bg-transparent border-b border-muted-foreground focus:border-primary px-2 py-1 h-7 text-sm rounded-none appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]",
+							Attributes: templ.Attributes{
+								"x-model": "formData.servings",
+								"@input": "hasUnsavedChanges = true",
+								"min": "0",
+							},
+						})
+						<span class="text-sm font-medium">servings</span>
+					</div>
+				</div>
+				
+				<!-- Tags Edit -->
+				<div class="flex-1 min-w-0 space-y-3">
+					<div class="flex items-center gap-2">
+						@icon.Icon("tag")(icon.Props{Size: 20, Class: "text-primary"})
+						<!-- Add new tag input -->
+						<div class="flex items-center gap-2">
+							@input.Input(input.Props{
+								Type: input.TypeText,
+								ID: "newTag",
+								Placeholder: "Add a tag...",
+								Class: "flex-1 text-sm",
+								Attributes: templ.Attributes{
+									"x-model": "newTag",
+									"@keydown.enter.prevent": "if (newTag.trim() && !formData.tags.includes(newTag.trim())) { formData.tags.push(newTag.trim()); newTag = ''; hasUnsavedChanges = true; }",
+								},
+							})
+							@button.Button(button.Props{
+								Type: "button",
+								Variant: "outline",
+								Size: "sm",
+								Attributes: templ.Attributes{
+									"@click": "if (newTag.trim() && !formData.tags.includes(newTag.trim())) { formData.tags.push(newTag.trim()); newTag = ''; hasUnsavedChanges = true; }",
+									":disabled": "!newTag.trim() || formData.tags.includes(newTag.trim())",
+								},
+							}) {
+								@icon.Icon("plus")(icon.Props{Size: 14, Class: "mr-1"})
+								Add
+							}
+						</div>
+					</div>
+					
+					<!-- Existing tags with delete buttons -->
+					<div class="flex flex-wrap gap-2" x-show="formData.tags.length > 0">
+						<template x-for="(tag, index) in formData.tags" :key="index">
+							<div class="flex items-center gap-1 bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs">
+								<span x-text="tag" class="font-semibold"></span>
+								<button 
+									type="button"
+									@click="formData.tags.splice(index, 1); hasUnsavedChanges = true"
+									class="ml-1 text-muted-foreground hover:text-destructive transition-colors cursor-pointer flex items-center justify-center !cursor-pointer"
+								>
+									@icon.Icon("x")(icon.Props{Size: 12})
+								</button>
+							</div>
+						</template>
+					</div>
+					
+					<!-- Hidden inputs for form submission -->
+					<template x-for="(tag, index) in formData.tags" :key="index">
+						<input type="hidden" name="tags" :value="tag">
+					</template>
+				</div>
+			</div>
 		</div>
+	</div>
+}
+
+templ recipeImage(recipe *models.Recipe) {
+	<div class="mb-12">
+		<!-- View Mode - Display current image -->
+		<div x-show="!editMode">
+			@card.Card(card.Props{Class: "overflow-hidden"}) {
+				<img 
+					src={ components.GetRecipeImageSrc(recipe.Image) }
+					alt={ recipe.Title }
+					class="w-full h-96 xl:h-[500px] object-cover"
+					onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDQwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xNjggMTUwQzE2OCAxMzMuNDMxIDE4MS40MzEgMTIwIDE5OCAxMjBDMjE0LjU2OSAxMjAgMjI4IDEzMy40MzEgMjI4IDE1MEMyMjggMTY2LjU2OSAyMTQuNTY5IDE4MCAyMTQgMTgwQzE4MS40MzEgMTgwIDE2OCAxNjYuNTY5IDE2OCAxNTBaIiBmaWxsPSIjOUNBM0FGIi8+CjxwYXRoIGQ9Ik0xMzYgMjAwTDE2OC42ODYzIDE2Ny4zMTRDMTc0LjkzNSAxNjEuMDY1IDE4NS4wNjUgMTYxLjA2NSAxOTEuMzE0IDE2Ny4zMTRMMjY0IDIwMEgxMzZaIiBmaWxsPSIjOUNBM0FGIi8+Cjwvc3ZnPg=='"
+				>
+			}
+		</div>
+
+		<!-- Edit Mode - Image upload/URL options -->
+		<div x-show="editMode" class="space-y-4">
+			@card.Card(card.Props{Class: "overflow-hidden"}) {
+				<!-- Image preview -->
+				<img 
+					:src="formData.uploadedImagePreview || formData.imageURL || originalImageURL || '/assets/img/default_recipe_image.jpeg'"
+					alt="Recipe image preview"
+					class="w-full h-96 xl:h-[500px] object-cover"
+					onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDQwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xNjggMTUwQzE2OCAxMzMuNDMxIDE4MS40MzEgMTIwIDE5OCAxMjBDMjE0LjU2OSAxMjAgMjI4IDEzMy40MzEgMjI4IDE1MEMyMjggMTY2LjU2OSAyMTQuNTY5IDE4MCAyMTQgMTgwQzE4MS40MzEgMTgwIDE2OCAxNjYuNTY5IDE2OCAxNTBaIiBmaWxsPSIjOUNBM0FGIi8+CjxwYXRoIGQ9Ik0xMzYgMjAwTDE2OC42ODYzIDE2Ny4zMTRDMTc0LjkzNSAxNjEuMDY1IDE4NS4wNjUgMTYxLjA2NSAxOTEuMzE0IDE2Ny4zMTRMMjY0IDIwMEgxMzZaIiBmaWxsPSIjOUNBM0FGIi8+Cjwvc3ZnPg=='"
+				>
+			}
+			
+			<!-- Image source tabs -->
+			@tabs.Tabs(tabs.Props{
+				ID: "image-tabs",
+				Class: "w-full mt-4",
+			}) {
+				@tabs.List(tabs.ListProps{
+					Class: "w-full",
+				}) {
+					@tabs.Trigger(tabs.TriggerProps{
+						Value:    "url",
+						IsActive: true,
+					}) {
+						@icon.Icon("link")(icon.Props{Size: 16, Class: "mr-2"})
+						Image URL
+					}
+					@tabs.Trigger(tabs.TriggerProps{
+						Value: "upload",
+					}) {
+						@icon.Icon("upload")(icon.Props{Size: 16, Class: "mr-2"})
+						Upload Image
+					}
+				}
+				
+				<div class="mt-4">
+					@tabs.Content(tabs.ContentProps{
+						Value:    "url",
+						IsActive: true,
+					}) {
+						@imageURLTab()
+					}
+					@tabs.Content(tabs.ContentProps{
+						Value: "upload",
+					}) {
+						@imageUploadTab()
+					}
+				</div>
+			}
+			
+			<!-- Hidden inputs for form submission -->
+			<input type="hidden" name="imageURL" :value="formData.imageURL" />
+		</div>
+	</div>
+}
+
+templ imageURLTab() {
+	<div class="space-y-2">
+		@form.Item() {
+			<div class="flex items-center gap-3 mb-2">
+				@icon.Icon("link")(icon.Props{Size: 20, Class: "text-primary"})
+				<span class="text-sm font-medium text-foreground">Image URL</span>
+			</div>
+			@input.Input(input.Props{
+				Type: input.TypeURL,
+				Name: "imageUrl",
+				ID: "imageUrl",
+				Placeholder: "https://example.com/image.jpg",
+				Class: "w-full",
+				Attributes: templ.Attributes{
+					"x-model": "formData.imageURL",
+					"@input": "hasUnsavedChanges = true; formData.uploadedImagePreview = null",
+				},
+			})
+		}
+		<p class="text-xs text-muted-foreground">
+			Enter a valid image URL.
+		</p>
+	</div>
+}
+
+templ imageUploadTab() {
+	<div class="space-y-2">
+		@form.Item() {
+			<div class="flex items-center gap-3 mb-2">
+				@icon.Icon("upload")(icon.Props{Size: 20, Class: "text-primary"})
+				<span class="text-sm font-medium text-foreground">Upload Image</span>
+			</div>
+			<label 
+				class="relative block border-2 border-dashed rounded-lg p-4 hover:border-primary/50 hover:bg-accent/25 transition-all duration-200 cursor-pointer group"
+				:class="formData.uploadedImagePreview ? 'border-primary/50 bg-accent/25' : 'border-muted-foreground/25'"
+			>
+				<div class="flex items-center justify-center space-x-2 pointer-events-none" 
+					:class="formData.uploadedImagePreview ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'">
+					<svg x-show="!formData.uploadedImagePreview" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+					</svg>
+					<svg x-show="formData.uploadedImagePreview" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: none;">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+					</svg>
+					<span class="text-sm font-medium" x-text="formData.uploadedImagePreview ? 'Image selected' : 'Click to upload image'"></span>
+				</div>
+				<p 
+					class="text-xs text-muted-foreground text-center mt-1 pointer-events-none"
+					x-text="formData.uploadedImagePreview ? 'Click to change file' : 'JPEG/JPG/PNG files only'"
+				></p>
+				@input.Input(input.Props{
+					Type: input.TypeFile, 
+					FileAccept: "image/jpeg,image/png,image/jpg", 
+					Class: "absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10",
+					Name: "imageFile",
+					Attributes: templ.Attributes{
+						"@change": `if ($event.target.files.length > 0) { 
+							const file = $event.target.files[0]; 
+							const reader = new FileReader(); 
+							reader.onload = (e) => { 
+								formData.uploadedImagePreview = e.target.result; 
+								formData.imageURL = ''; // Clear URL when file is uploaded
+							}; 
+							reader.readAsDataURL(file); 
+							hasUnsavedChanges = true; 
+						} else { 
+							formData.uploadedImagePreview = null; 
+						}`,
+					},
+				})
+			</label>
+		}
+		<p class="text-xs text-muted-foreground">
+			Upload a JPEG or PNG image file. Maximum file size: 10MB.
+		</p>
 	</div>
 }
 
@@ -192,44 +573,201 @@ templ recipeIngredients(recipe *models.Recipe) {
 				@card.Title(card.TitleProps{Class: "flex items-center gap-3 text-2xl font-bold"}) {
 					@icon.Icon("shopping-cart")(icon.Props{Size: 24, Class: "text-primary"})
 					Ingredients
-					if len(recipe.Ingredients) > 0 {
-						@badge.Badge(badge.Props{Variant: badge.VariantSecondary, Class: "ml-auto text-xs"}) {
-							{ strconv.Itoa(len(recipe.Ingredients)) } items
+					<!-- View mode count badge -->
+					<div x-show="!editMode" class="ml-auto">
+						if len(recipe.Ingredients) > 0 {
+							@badge.Badge(badge.Props{Variant: badge.VariantSecondary, Class: "text-xs"}) {
+								{ strconv.Itoa(len(recipe.Ingredients)) } items
+							}
 						}
-					}
+					</div>
+					<!-- Edit mode count badge -->
+					<div x-show="editMode" class="ml-auto">
+						@badge.Badge(badge.Props{Variant: badge.VariantSecondary, Class: "text-xs"}) {
+							<span x-text="formData.ingredients.length"></span> items
+						}
+					</div>
 				}
 			}
 			@card.Content() {
-				if len(recipe.Ingredients) > 0 {
-					<div>
-						for _, ingredient := range recipe.Ingredients {
-							<div class="grid grid-cols-[50px_1fr] gap-6 p-2 rounded-lg hover:bg-muted/50 transition-colors">
-								<div class="text-left">
-									if hasIngredientQuantity(ingredient) {
-										<span class="inline-flex items-baseline gap-1">
-											if ingredient.Quantity > 0 {
-												<span class="font-semibold text-foreground">{ formatQuantityNumber(ingredient.Quantity) }</span>
-											}
-											if ingredient.Unit != "" {
-												<span class="text-sm text-muted-foreground font-medium">{ ingredient.Unit }</span>
-											}
-										</span>
-									} else {
-										<span class="text-xs text-muted-foreground"></span>
-									}
+				<!-- View Mode -->
+				<div x-show="!editMode">
+					if len(recipe.Ingredients) > 0 {
+						<div>
+							for _, ingredient := range recipe.Ingredients {
+								<div class="grid grid-cols-[50px_1fr] gap-6 p-2 rounded-lg hover:bg-muted/50 transition-colors">
+									<div class="text-left">
+										if hasIngredientQuantity(ingredient) {
+											<span class="inline-flex items-baseline gap-1">
+												if ingredient.Quantity > 0 {
+													<span class="font-semibold text-foreground">{ formatQuantityNumber(ingredient.Quantity) }</span>
+												}
+												if ingredient.Unit != "" {
+													<span class="text-sm text-muted-foreground font-medium">{ ingredient.Unit }</span>
+												}
+											</span>
+										} else {
+											<span class="text-xs text-muted-foreground"></span>
+										}
+									</div>
+									<div class="text-left">
+										<span class="text-foreground leading-relaxed">{ formatIngredientName(ingredient) }</span>
+									</div>
 								</div>
-								<div class="text-left">
-									<span class="text-foreground leading-relaxed">{ formatIngredientName(ingredient) }</span>
+							}
+						</div>
+					} else {
+						<div class="text-center py-12 text-muted-foreground">
+							@icon.Icon("package")(icon.Props{Size: 48, Class: "mx-auto mb-4 opacity-50"})
+							<p>No ingredients listed.</p>
+						</div>
+					}
+				</div>
+
+				<!-- Edit Mode -->
+				<div x-show="editMode" class="space-y-4">
+					<!-- Existing ingredients -->
+					<div class="space-y-1">
+						<template x-for="ingredient in formData.ingredients" :key="ingredient.id">
+							<div class="border border-border rounded-md p-2 bg-card">
+								<div class="grid grid-cols-[100px_80px_1fr_auto] gap-2 items-center">
+									<!-- Quantity -->
+									@input.Input(input.Props{
+										Type: input.TypeNumber,
+										Placeholder: "0",
+										Class: "w-full text-sm h-8 appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]",
+										Attributes: templ.Attributes{
+											"x-model": "ingredient.quantity",
+											"@input": "ingredient.quantity = parseFloat($event.target.value) || 0; hasUnsavedChanges = true",
+											"step": "0.1",
+											"min": "0",
+										},
+									})
+									<!-- Unit -->
+									@input.Input(input.Props{
+										Type: input.TypeText,
+										Placeholder: "unit",
+										Class: "w-full text-sm h-8",
+										Attributes: templ.Attributes{
+											"x-model": "ingredient.unit",
+											"@input": "hasUnsavedChanges = true",
+										},
+									})
+									<!-- Name -->
+									@input.Input(input.Props{
+										Type: input.TypeText,
+										Placeholder: "Ingredient name",
+										Class: "w-full text-sm h-8",
+										Attributes: templ.Attributes{
+											"x-model": "ingredient.name",
+											"@input": "hasUnsavedChanges = true",
+										},
+									})
+									<!-- Action buttons -->
+									<div class="flex items-center gap-1">
+										<!-- Move up button -->
+										@button.Button(button.Props{
+											Type: "button",
+											Variant: "outline",
+											Size: "sm",
+											Class: "p-1 h-7 w-7",
+											Attributes: templ.Attributes{
+												"@click": "moveIngredientUp(ingredient.id)",
+												":disabled": "formData.ingredients.indexOf(ingredient) === 0",
+											},
+										}) {
+											@icon.Icon("chevron-up")(icon.Props{Size: 12})
+										}
+										<!-- Move down button -->
+										@button.Button(button.Props{
+											Type: "button",
+											Variant: "outline",
+											Size: "sm",
+											Class: "p-1 h-7 w-7",
+											Attributes: templ.Attributes{
+												"@click": "moveIngredientDown(ingredient.id)",
+												":disabled": "formData.ingredients.indexOf(ingredient) === formData.ingredients.length - 1",
+											},
+										}) {
+											@icon.Icon("chevron-down")(icon.Props{Size: 12})
+										}
+										<!-- Remove button -->
+										@button.Button(button.Props{
+											Type: "button",
+											Variant: "outline",
+											Size: "sm",
+											Class: "p-1 h-7 w-7",
+											Attributes: templ.Attributes{
+												"@click": "removeIngredient(ingredient.id)",
+											},
+										}) {
+											@icon.Icon("trash")(icon.Props{Size: 12, Class: "text-destructive"})
+										}
+									</div>
 								</div>
 							</div>
-						}
+						</template>
 					</div>
-				} else {
-					<div class="text-center py-12 text-muted-foreground">
+
+					<!-- Add new ingredient -->
+					<div class="border-2 border-dashed border-border rounded-md p-2 bg-muted/20">
+						<div class="grid grid-cols-[100px_80px_1fr_auto] gap-2 items-center">
+							<!-- New ingredient quantity -->
+							@input.Input(input.Props{
+								Type: input.TypeNumber,
+								Placeholder: "0",
+								Class: "w-full text-center text-sm h-8",
+								Attributes: templ.Attributes{
+									"x-model": "newIngredient.quantity",
+									"step": "0.1",
+									"min": "0",
+								},
+							})
+							<!-- New ingredient unit -->
+							@input.Input(input.Props{
+								Type: input.TypeText,
+								Placeholder: "unit",
+								Class: "w-full text-sm h-8",
+								Attributes: templ.Attributes{
+									"x-model": "newIngredient.unit",
+								},
+							})
+							<!-- New ingredient name -->
+							@input.Input(input.Props{
+								Type: input.TypeText,
+								Placeholder: "Ingredient name",
+								Class: "w-full text-sm h-8",
+								Attributes: templ.Attributes{
+									"x-model": "newIngredient.name",
+									"@keydown.enter.prevent": "if (newIngredient.name.trim()) { formData.ingredients.push({id: Date.now(), quantity: parseFloat(newIngredient.quantity) || 0, unit: newIngredient.unit, name: newIngredient.name.trim()}); newIngredient = {quantity: '', unit: '', name: ''}; hasUnsavedChanges = true; }",
+								},
+							})
+							<!-- Add button -->
+							@button.Button(button.Props{
+								Type: "button",
+								Variant: "default",
+								Size: "sm",
+								Class: "h-8",
+								Attributes: templ.Attributes{
+									"@click": "if (newIngredient.name.trim()) { formData.ingredients.push({id: Date.now(), quantity: parseFloat(newIngredient.quantity) || 0, unit: newIngredient.unit, name: newIngredient.name.trim()}); newIngredient = {quantity: '', unit: '', name: ''}; hasUnsavedChanges = true; }",
+									":disabled": "!newIngredient.name.trim()",
+								},
+							}) {
+								@icon.Icon("plus")(icon.Props{Size: 14, Class: "mr-1"})
+								Add
+							}
+						</div>
+					</div>
+
+					<!-- Empty state for edit mode -->
+					<div x-show="formData.ingredients.length === 0" class="text-center py-12 text-muted-foreground">
 						@icon.Icon("package")(icon.Props{Size: 48, Class: "mx-auto mb-4 opacity-50"})
-						<p>No ingredients listed.</p>
+						<p>No ingredients yet. Add your first ingredient above!</p>
 					</div>
-				}
+
+					<!-- Hidden input for ingredients JSON -->
+					<input type="hidden" name="ingredients" :value="JSON.stringify(formData.ingredients.map(ing => ({quantity: ing.quantity, unit: ing.unit, name: ing.name})))" />
+				</div>
 			}
 		}
 	</div>
@@ -242,33 +780,167 @@ templ recipeInstructions(recipe *models.Recipe) {
 				@card.Title(card.TitleProps{Class: "flex items-center gap-3 text-2xl font-bold"}) {
 					@icon.Icon("list-ordered")(icon.Props{Size: 22, Class: "text-primary"})
 					Instructions
-					if len(recipe.Steps) > 0 {
-						@badge.Badge(badge.Props{Variant: badge.VariantSecondary, Class: "ml-auto text-xs"}) {
-							{ strconv.Itoa(len(recipe.Steps)) } steps
+					<!-- View mode count badge -->
+					<div x-show="!editMode" class="ml-auto">
+						if len(recipe.Steps) > 0 {
+							@badge.Badge(badge.Props{Variant: badge.VariantSecondary, Class: "text-xs"}) {
+								{ strconv.Itoa(len(recipe.Steps)) } steps
+							}
 						}
-					}
+					</div>
+					<!-- Edit mode count badge -->
+					<div x-show="editMode" class="ml-auto">
+						@badge.Badge(badge.Props{Variant: badge.VariantSecondary, Class: "text-xs"}) {
+							<span x-text="formData.instructions.length"></span> steps
+						}
+					</div>
 				}
 			}
 			@card.Content() {
-				if len(recipe.Steps) > 0 {
-					<div class="space-y-2">
-						for i, step := range recipe.Steps {
-							<div class="flex items-baseline gap-4 p-3 rounded-lg hover:bg-muted/50 transition-colors">
-								<div class="flex-shrink-0">
-									<div class="w-8 h-8 border-2 border-primary text-primary rounded-full flex items-center justify-center text-sm font-bold">
-										{ strconv.Itoa(i + 1) }
+				<!-- View Mode -->
+				<div x-show="!editMode">
+					if len(recipe.Steps) > 0 {
+						<div class="space-y-2">
+							for i, step := range recipe.Steps {
+								<div class="flex items-baseline gap-4 p-3 rounded-lg hover:bg-muted/50 transition-colors">
+									<div class="flex-shrink-0">
+										<div class="w-8 h-8 border-2 border-primary text-primary rounded-full flex items-center justify-center text-sm font-bold">
+											{ strconv.Itoa(i + 1) }
+										</div>
+									</div>
+									<span class="text-foreground leading-relaxed whitespace-pre-line">{ step }</span>
+								</div>
+							}
+						</div>
+					} else {
+						<div class="text-center py-12 text-muted-foreground">
+							@icon.Icon("clipboard-list")(icon.Props{Size: 48, Class: "mx-auto mb-4 opacity-50"})
+							<p>No instructions provided.</p>
+						</div>
+					}
+				</div>
+
+				<!-- Edit Mode -->
+				<div x-show="editMode" class="space-y-4">
+					<!-- Existing instructions -->
+					<div class="space-y-3">
+						<template x-for="(instruction, index) in formData.instructions" :key="instruction.id">
+							<div class="border border-border rounded-md p-3 bg-card">
+								<div class="flex items-stretch gap-3">
+									<!-- Step number -->
+									<div class="flex-shrink-0 flex items-start pt-2">
+										<div class="w-8 h-8 border-2 border-primary text-primary rounded-full flex items-center justify-center text-sm font-bold" x-text="index + 1"></div>
+									</div>
+									<!-- Instruction text -->
+									<div class="flex-1">
+										@textarea.Textarea(textarea.Props{
+											Placeholder: "Enter instruction step...",
+											AutoResize: false,
+											Class: "w-full h-full text-sm resize-none",
+											Attributes: templ.Attributes{
+												"x-model": "instruction.text",
+												"@input": "hasUnsavedChanges = true",
+											},
+										})
+									</div>
+									<!-- Action buttons -->
+									<div class="flex flex-col gap-1">
+										<!-- Move up button -->
+										@button.Button(button.Props{
+											Type: "button",
+											Variant: "outline",
+											Size: "sm",
+											Class: "p-1 h-7 w-7",
+											Attributes: templ.Attributes{
+												"@click": "moveInstructionUp(instruction.id)",
+												":disabled": "index === 0",
+											},
+										}) {
+											@icon.Icon("chevron-up")(icon.Props{Size: 12})
+										}
+										<!-- Move down button -->
+										@button.Button(button.Props{
+											Type: "button",
+											Variant: "outline",
+											Size: "sm",
+											Class: "p-1 h-7 w-7",
+											Attributes: templ.Attributes{
+												"@click": "moveInstructionDown(instruction.id)",
+												":disabled": "index === formData.instructions.length - 1",
+											},
+										}) {
+											@icon.Icon("chevron-down")(icon.Props{Size: 12})
+										}
+										<!-- Remove button -->
+										@button.Button(button.Props{
+											Type: "button",
+											Variant: "outline",
+											Size: "sm",
+											Class: "p-1 h-7 w-7",
+											Attributes: templ.Attributes{
+												"@click": "removeInstruction(instruction.id)",
+											},
+										}) {
+											@icon.Icon("trash")(icon.Props{Size: 12, Class: "text-destructive"})
+										}
 									</div>
 								</div>
-								<span class="text-foreground leading-relaxed">{ step }</span>
 							</div>
-						}
+						</template>
 					</div>
-				} else {
-					<div class="text-center py-12 text-muted-foreground">
+
+					<!-- Add new instruction -->
+					<div class="border-2 border-dashed border-border rounded-md p-3 bg-muted/20">
+						<div class="flex items-start gap-3">
+							<!-- Step number -->
+							<div class="flex-shrink-0 mt-2">
+								<div class="w-8 h-8 border-2 border-muted-foreground text-muted-foreground rounded-full flex items-center justify-center text-sm font-bold" x-text="formData.instructions.length + 1"></div>
+							</div>
+							<!-- New instruction text -->
+							<div class="flex-1">
+								@textarea.Textarea(textarea.Props{
+									Placeholder: "Enter new instruction step...",
+									AutoResize: true,
+									Class: "w-full min-h-[60px] text-sm",
+									Attributes: templ.Attributes{
+										"x-model": "newInstruction",
+										"@keydown.ctrl.enter.prevent": "if (newInstruction.trim()) { formData.instructions.push({id: Date.now(), text: newInstruction.trim()}); newInstruction = ''; hasUnsavedChanges = true; }",
+									},
+								})
+							</div>
+							<!-- Add button -->
+							<div class="flex flex-col justify-start mt-2">
+								@button.Button(button.Props{
+									Type: "button",
+									Variant: "default",
+									Size: "sm",
+									Class: "h-8",
+									Attributes: templ.Attributes{
+										"@click": "if (newInstruction.trim()) { formData.instructions.push({id: Date.now(), text: newInstruction.trim()}); newInstruction = ''; hasUnsavedChanges = true; }",
+										":disabled": "!newInstruction.trim()",
+									},
+								}) {
+									@icon.Icon("plus")(icon.Props{Size: 14, Class: "mr-1"})
+									Add
+								}
+							</div>
+						</div>
+						<p class="text-xs text-muted-foreground mt-2 ml-11">
+							Tip: Press Ctrl+Enter to quickly add the instruction
+						</p>
+					</div>
+
+					<!-- Empty state for edit mode -->
+					<div x-show="formData.instructions.length === 0" class="text-center py-12 text-muted-foreground">
 						@icon.Icon("clipboard-list")(icon.Props{Size: 48, Class: "mx-auto mb-4 opacity-50"})
-						<p>No instructions provided.</p>
+						<p>No instructions yet. Add your first step above!</p>
 					</div>
-				}
+
+					<!-- Hidden inputs for form submission -->
+					<template x-for="(instruction, index) in formData.instructions" :key="index">
+						<input type="hidden" name="instructions" :value="instruction.text">
+					</template>
+				</div>
 			}
 		}
 	</div>
@@ -324,4 +996,49 @@ func formatQuantityNumber(quantity float32) string {
 		return fmt.Sprintf("%.0f", quantity)
 	}
 	return fmt.Sprintf("%.1f", quantity)
+}
+
+func getRecipeFormAction(recipe *models.Recipe) string {
+	if recipe.ID.IsZero() {
+		return "/recipe"
+	}
+	return "/recipe/" + recipe.ID.Hex()
+}
+
+func getRecipeIdHex(recipe *models.Recipe) string {
+	if recipe.ID.IsZero() {
+		return ""
+	}
+	return recipe.ID.Hex()
+}
+
+func getStringArrayJSON(tags []string) string {
+	if len(tags) == 0 {
+		return "[]"
+	}
+	
+	// Use proper JSON marshalling to handle escaping
+	jsonBytes, err := json.Marshal(tags)
+	if err != nil {
+		return "[]"
+	}
+	return string(jsonBytes)
+}
+
+func getIngredientsJSON(ingredients []models.Ingredient) string {
+	if len(ingredients) == 0 {
+		return "[]"
+	}
+	result := "["
+	for i, ingredient := range ingredients {
+		if i > 0 {
+			result += ","
+		}
+		result += fmt.Sprintf(`{"quantity":%g,"unit":"%s","name":"%s"}`, 
+			ingredient.Quantity, 
+			ingredient.Unit, 
+			ingredient.Name)
+	}
+	result += "]"
+	return result
 }

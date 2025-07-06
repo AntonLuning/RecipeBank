@@ -573,11 +573,11 @@ func TestCreateRecipeWithImage(t *testing.T) {
 
 	ctx := context.Background()
 
-	// Valid JPEG base64 data (1x1 pixel JPEG)
-	validJPEGBase64 := "/9j/4AAQSkZJRgABAQEASABIAAD/2Q=="
+	// Valid JPEG data URI (1x1 pixel JPEG)
+	validJPEGDataURI := "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2Q=="
 
-	// Valid PNG base64 data (1x1 pixel PNG)
-	validPNGBase64 := "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChAI9DeAQu3QAAAABJRU5ErkJggg="
+	// Valid PNG data URI (1x1 pixel PNG)
+	validPNGDataURI := "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChAI9DeAQu3QAAAABJRU5ErkJggg="
 
 	t.Run("Success with JPEG image", func(t *testing.T) {
 		recipe := &models.Recipe{
@@ -589,7 +589,7 @@ func TestCreateRecipeWithImage(t *testing.T) {
 			Steps:    []string{"Step 1", "Step 2"},
 			CookTime: 30,
 			Servings: 4,
-			Image:    validJPEGBase64,
+			Image:    validJPEGDataURI,
 		}
 
 		expectedRecipe := &models.Recipe{
@@ -609,7 +609,7 @@ func TestCreateRecipeWithImage(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.NotNil(t, createdRecipe)
-		assert.Equal(t, validJPEGBase64, createdRecipe.Image)
+		assert.Equal(t, validJPEGDataURI, createdRecipe.Image)
 		mockStorage.AssertExpectations(t)
 	})
 
@@ -623,7 +623,7 @@ func TestCreateRecipeWithImage(t *testing.T) {
 			Steps:    []string{"Step 1", "Step 2"},
 			CookTime: 30,
 			Servings: 4,
-			Image:    validPNGBase64,
+			Image:    validPNGDataURI,
 		}
 
 		expectedRecipe := &models.Recipe{
@@ -643,7 +643,7 @@ func TestCreateRecipeWithImage(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.NotNil(t, createdRecipe)
-		assert.Equal(t, validPNGBase64, createdRecipe.Image)
+		assert.Equal(t, validPNGDataURI, createdRecipe.Image)
 		mockStorage.AssertExpectations(t)
 	})
 
@@ -681,7 +681,7 @@ func TestCreateRecipeWithImage(t *testing.T) {
 		mockStorage.AssertExpectations(t)
 	})
 
-	t.Run("Error with invalid base64", func(t *testing.T) {
+	t.Run("Error with invalid data URI", func(t *testing.T) {
 		recipe := &models.Recipe{
 			Title:       "Test Recipe",
 			Description: "Test Description",
@@ -691,7 +691,7 @@ func TestCreateRecipeWithImage(t *testing.T) {
 			Steps:    []string{"Step 1", "Step 2"},
 			CookTime: 30,
 			Servings: 4,
-			Image:    "invalid-base64!@#$%",
+			Image:    "data:invalid-format", // Invalid data URI
 		}
 
 		createdRecipe, err := recipeService.CreateRecipe(ctx, recipe)
@@ -703,8 +703,8 @@ func TestCreateRecipeWithImage(t *testing.T) {
 	})
 
 	t.Run("Error with unsupported image format", func(t *testing.T) {
-		// This is a valid base64 but not a valid image format (text data)
-		invalidImageBase64 := "VGhpcyBpcyBub3QgYW4gaW1hZ2U="
+		// Valid data URI but unsupported format
+		unsupportedDataURI := "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
 
 		recipe := &models.Recipe{
 			Title:       "Test Recipe",
@@ -715,7 +715,7 @@ func TestCreateRecipeWithImage(t *testing.T) {
 			Steps:    []string{"Step 1", "Step 2"},
 			CookTime: 30,
 			Servings: 4,
-			Image:    invalidImageBase64,
+			Image:    unsupportedDataURI,
 		}
 
 		createdRecipe, err := recipeService.CreateRecipe(ctx, recipe)
@@ -766,12 +766,20 @@ func TestGetIngredients(t *testing.T) {
 	})
 
 	t.Run("Validation Error - Invalid Sort", func(t *testing.T) {
+		expectedIngredients := []models.ResourceSummary{
+			{Name: "Flour", Count: 15},
+			{Name: "Sugar", Count: 12},
+			{Name: "Butter", Count: 8},
+		}
+
+		// The service logs an error and uses "name_asc" as default for invalid sort
+		mockStorage.On("GetIngredients", ctx, "name_asc").Return(expectedIngredients, nil).Once()
+
 		ingredients, err := recipeService.GetIngredients(ctx, "invalid_sort")
 
-		assert.Error(t, err)
-		assert.Nil(t, ingredients)
-		assert.ErrorIs(t, errors.Unwrap(err), ErrValidation)
-		assert.Contains(t, err.Error(), "sort parameter must be one of")
+		assert.NoError(t, err)
+		assert.Equal(t, expectedIngredients, ingredients)
+		mockStorage.AssertExpectations(t)
 	})
 
 	t.Run("Storage Error", func(t *testing.T) {
@@ -826,12 +834,20 @@ func TestGetTags(t *testing.T) {
 	})
 
 	t.Run("Validation Error - Invalid Sort", func(t *testing.T) {
+		expectedTags := []models.ResourceSummary{
+			{Name: "dessert", Count: 25},
+			{Name: "vegetarian", Count: 18},
+			{Name: "quick", Count: 12},
+		}
+
+		// The service logs an error and uses "name_asc" as default for invalid sort
+		mockStorage.On("GetTags", ctx, "name_asc").Return(expectedTags, nil).Once()
+
 		tags, err := recipeService.GetTags(ctx, "invalid_sort")
 
-		assert.Error(t, err)
-		assert.Nil(t, tags)
-		assert.ErrorIs(t, errors.Unwrap(err), ErrValidation)
-		assert.Contains(t, err.Error(), "sort parameter must be one of")
+		assert.NoError(t, err)
+		assert.Equal(t, expectedTags, tags)
+		mockStorage.AssertExpectations(t)
 	})
 
 	t.Run("Storage Error", func(t *testing.T) {

@@ -14,6 +14,8 @@ import (
 	"github.com/AntonLuning/RecipeBank/internal/ui/components/modal"
 	"github.com/AntonLuning/RecipeBank/internal/ui/components/popover"
 	"github.com/AntonLuning/RecipeBank/internal/ui/components/selectbox"
+	"github.com/AntonLuning/RecipeBank/internal/ui/components/tabs"
+	"github.com/AntonLuning/RecipeBank/internal/ui/components/textarea"
 )
 
 func AlpineAjaxReInitTemplUIScript() templ.Component {
@@ -73,7 +75,7 @@ func BaseLayout(title string) templ.Component {
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/layouts/layout.templ`, Line: 35, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/layouts/layout.templ`, Line: 37, Col: 17}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -100,6 +102,14 @@ func BaseLayout(title string) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		templ_7745c5c3_Err = popover.Script().Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = textarea.Script().Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = tabs.Script().Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -41,31 +41,18 @@ func validateURL(url string) error {
 }
 
 func validateBase64Image(image string, imageType string) error {
-	if image == "" {
-		return fmt.Errorf("image data cannot be empty")
-	}
-
-	// Decode base64
-	data, err := base64.StdEncoding.DecodeString(image)
+	detectedImageType, err := detectImageTypeFromBase64(image)
 	if err != nil {
 		return fmt.Errorf("invalid base64 encoding: %w", err)
 	}
 
-	// Check if it's an image by looking at file signatures
-	if len(data) < 4 {
-		return fmt.Errorf("data too short to be a valid image")
+	if detectedImageType != strings.ToLower(imageType) {
+		if strings.ToLower(imageType) == "jpg" && detectedImageType != "jpeg" {
+			return fmt.Errorf("image type mismatch: expected %s, got %s", imageType, detectedImageType)
+		}
 	}
 
-	// Check common image format signatures
-	if bytes.HasPrefix(data, []byte{0xFF, 0xD8, 0xFF}) && (strings.ToLower(imageType) == "jpeg" || strings.ToLower(imageType) == "jpg") {
-		// JPEG/JPG signature
-		return nil
-	} else if bytes.HasPrefix(data, []byte{0x89, 0x50, 0x4E, 0x47}) && strings.ToLower(imageType) == "png" {
-		// PNG signature
-		return nil
-	}
-
-	return fmt.Errorf("unrecognized/unsupported image format")
+	return nil
 }
 
 func detectImageTypeFromBase64(image string) (string, error) {
@@ -92,4 +79,39 @@ func detectImageTypeFromBase64(image string) (string, error) {
 	}
 
 	return "", fmt.Errorf("unrecognized/unsupported image format (only JPEG and PNG are supported)")
+}
+
+func detectImageTypeFromDataURI(imageData string) (string, error) {
+	if imageData == "" {
+		return "", nil // Empty image is valid (optional field)
+	}
+
+	// Check if it's a data URI format
+	if strings.HasPrefix(imageData, "data:") {
+		// Extract MIME type and base64 data from data URI
+		parts := strings.Split(imageData, ",")
+		if len(parts) != 2 {
+			return "", fmt.Errorf("invalid data URI format")
+		}
+
+		// Extract MIME type from the first part (e.g., "data:image/jpeg;base64")
+		headerPart := parts[0]
+		if strings.Contains(headerPart, "image/jpeg") {
+			// Validate by decoding the base64 part
+			if _, err := base64.StdEncoding.DecodeString(parts[1]); err != nil {
+				return "", fmt.Errorf("invalid base64 encoding: %w", err)
+			}
+			return "jpeg", nil
+		} else if strings.Contains(headerPart, "image/png") {
+			// Validate by decoding the base64 part
+			if _, err := base64.StdEncoding.DecodeString(parts[1]); err != nil {
+				return "", fmt.Errorf("invalid base64 encoding: %w", err)
+			}
+			return "png", nil
+		} else {
+			return "", fmt.Errorf("unsupported image type in data URI")
+		}
+	}
+
+	return "", fmt.Errorf("invalid data URI format")
 }
